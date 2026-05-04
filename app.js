@@ -1,4 +1,4 @@
-// v2.0
+// v2.1
 'use strict';
 
 // ─── FIREBASE CONFIG ───────────────────────────────────────────────────────────
@@ -46,6 +46,7 @@ const state = {
   abilityUsed: false,
   nightActionDone: false,
   leccapiedinChoiceMade: false,
+  leccapedeSwitch: false,
 };
 
 // ─── FIREBASE ──────────────────────────────────────────────────────────────────
@@ -184,26 +185,160 @@ const App = {
   async startGame() {
     const snap = await state.roomRef.child('players').once('value');
     const players = snap.val();
-    const names = Object.keys(players).filter(n => n !== state.myName); // exclude preside
+    const names = Object.keys(players).filter(n => n !== state.myName);
     const n = names.length;
     if (n < 6) { toast('Servono almeno 6 giocatori (escluso Preside)'); return; }
     if (n > 16) { toast('Massimo 16 giocatori'); return; }
+    state._configNames = names;
+    App._openConfig(n, names);
+  },
+
+  _openConfig(n, names) {
+    // Ruoli fissi
+    const bullCount = getBulliCount(n);
+    const fixed = [];
+    for (let i = 0; i < bullCount; i++) fixed.push('bullo');
+    fixed.push('segretaria');
+
+    // Slot liberi
+    const freeSlots = n - fixed.length;
+
+    // Genera suggerimento iniziale casuale (con abilità prima)
+    const suggested = generateRoles(n).filter(r => !fixed.includes(r) || fixed.splice(fixed.indexOf(r), 1) && false);
+    // Rebuild suggested from generateRoles minus fixed
+    const allGenerated = generateRoles(n);
+    const fixedCopy = [...fixed];
+    const suggestedFree = [];
+    for (const r of allGenerated) {
+      const fi = fixedCopy.indexOf(r);
+      if (fi !== -1) { fixedCopy.splice(fi, 1); continue; }
+      suggestedFree.push(r);
+    }
+
+    state._configFixed = fixed;
+    state._configFree = suggestedFree.slice(0, freeSlots);
+    state._configSlots = freeSlots;
+
+    App._renderConfig();
+    App.goTo('screen-config');
+  },
+
+  _renderConfig() {
+    const fixed = state._configFixed;
+    const free = state._configFree;
+    const slots = state._configSlots;
+
+    // Label slot
+    document.getElementById('config-slots-label').textContent = `${slots} slot liberi`;
+
+    // Fixed roles pills
+    const fixedEl = document.getElementById('config-fixed-roles');
+    fixedEl.innerHTML = fixed.map(r => {
+      const role = ROLES[r];
+      return `<div style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:20px;padding:4px 12px;font-size:12px;color:#fca5a5;display:flex;align-items:center;gap:4px">
+        <span>${role?.icon || '❓'}</span><span style="font-family:'Cinzel',serif">${role?.name || r}</span>
+      </div>`;
+    }).join('');
+
+    // Slot liberi
+    const slotsEl = document.getElementById('config-slots');
+    slotsEl.innerHTML = free.map((r, i) => {
+      const role = ROLES[r];
+      const isMotoria = r === 'prof_motoria_1' || r === 'prof_motoria_2';
+      return `<div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:20px">${role?.icon || '❓'}</span>
+        <div style="flex:1">
+          <div style="font-family:'Cinzel',serif;font-size:13px;color:white">${role?.name || r}${isMotoria ? ' <span style="font-size:10px;color:rgba(255,255,255,0.4)">(coppia)</span>' : ''}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px">${role?.team || ''}</div>
+        </div>
+        <button onclick="App._configRemoveSlot(${i})" style="background:rgba(239,68,68,0.2);border:none;border-radius:6px;padding:4px 10px;color:#fca5a5;font-size:12px;cursor:pointer">✕</button>
+      </div>`;
+    }).join('');
+
+    // Pool disponibile
+    const usedInFree = new Set(free);
+    // Prof motoria: se uno è usato, entrambi sono usati
+    const motoriaUsed = free.includes('prof_motoria_1') || free.includes('prof_motoria_2');
+
+    const POOL_WITH_ABILITY = [
+      'prof_sostegno','bidello','secchione','prof_religione','rappresentante_classe',
+      'rappresentante_libri','coordinatore','prof_chimica','prof_robotica',
+      'prof_motoria_1','furbetto','fifone','omertoso','leccapiedi','bullo_pentito'
+    ];
+    const GENERICI = ['primo_banco','pettina','ultimo_banco','dorme','mangia','nota'];
+    const allPool = [...POOL_WITH_ABILITY, ...GENERICI];
+
+    const freeSlotsLeft = slots - free.length;
+    const poolEl = document.getElementById('config-pool');
+    poolEl.innerHTML = allPool.map(r => {
+      if (r === 'prof_motoria_2') return ''; // mostra solo _1
+      const role = ROLES[r];
+      const isMotoria = r === 'prof_motoria_1';
+      const used = isMotoria ? motoriaUsed : usedInFree.has(r);
+      const needsTwo = isMotoria;
+      const canAdd = !used && freeSlotsLeft >= (needsTwo ? 2 : 1);
+      const isFixed = state._configFixed.includes(r);
+      if (isFixed) return '';
+      return `<button onclick="App._configAddSlot('${r}')" ${(!canAdd || used) ? 'disabled' : ''} style="background:${used ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.08)'};border:1px solid ${used ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.2)'};border-radius:20px;padding:5px 12px;font-size:12px;color:${used ? 'rgba(255,255,255,0.3)' : 'white'};cursor:${canAdd && !used ? 'pointer' : 'default'};display:inline-flex;align-items:center;gap:4px">
+        <span>${role?.icon || '❓'}</span>
+        <span style="font-family:'Cinzel',serif">${role?.name || r}${isMotoria ? ' ×2' : ''}</span>
+        ${used ? '<span style="font-size:10px">✓</span>' : ''}
+      </button>`;
+    }).join('');
+  },
+
+  _configRemoveSlot(i) {
+    const r = state._configFree[i];
+    if (r === 'prof_motoria_1' || r === 'prof_motoria_2') {
+      state._configFree = state._configFree.filter(x => x !== 'prof_motoria_1' && x !== 'prof_motoria_2');
+    } else {
+      state._configFree.splice(i, 1);
+    }
+    App._renderConfig();
+  },
+
+  _configAddSlot(r) {
+    const freeSlotsLeft = state._configSlots - state._configFree.length;
+    if (r === 'prof_motoria_1') {
+      if (freeSlotsLeft < 2) { toast('Non ci sono abbastanza slot per la coppia Motoria'); return; }
+      state._configFree.push('prof_motoria_1', 'prof_motoria_2');
+    } else {
+      if (freeSlotsLeft < 1) { toast('Nessuno slot libero'); return; }
+      state._configFree.push(r);
+    }
+    App._renderConfig();
+  },
+
+  async confirmConfig() {
+    const names = state._configNames;
+    const n = names.length;
+    const fixed = state._configFixed;
+    const free = state._configFree;
+    const total = fixed.length + free.length;
+
+    if (total < n) {
+      // Fill remaining with generici
+      const generici = ['primo_banco','pettina','ultimo_banco','dorme','mangia','nota'];
+      let gi = 0;
+      while (fixed.length + free.length < n) free.push(generici[gi++ % generici.length]);
+    }
+    if (fixed.length + free.length > n) {
+      toast('Hai troppi ruoli selezionati!'); return;
+    }
+
+    const roleIds = [...fixed, ...free];
+    // Shuffle
+    for (let i = roleIds.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [roleIds[i], roleIds[j]] = [roleIds[j], roleIds[i]];
+    }
 
     showLoading('Distribuendo i ruoli…');
-    const roleIds = generateRoles(n);
     const updates = {};
-
-    // Assign roles randomly
     names.forEach((name, i) => {
       updates[`players/${name}/role`] = roleIds[i];
     });
-
-    // Find bulli and complici for notifications
     const bullNames = names.filter((n2, i) => roleIds[i] === 'bullo');
-    const omertNames = names.filter((n2, i) => roleIds[i] === 'omertoso');
-    const pentNames  = names.filter((n2, i) => roleIds[i] === 'bullo_pentito');
-
-    // Store allies info (encrypted enough for this use case)
     updates['bullNames'] = bullNames;
     updates['status'] = 'role-reveal';
     updates['turn'] = 1;
@@ -213,7 +348,6 @@ const App = {
 
     await state.roomRef.update(updates);
     hideLoading();
-    // Show role report to preside
     App._showRoleReport(names, roleIds);
   },
 
@@ -300,7 +434,7 @@ const App = {
     // Segretaria: se è stata resuscitata, resetta il flag risposta
     if (!state.isHost && state.myRole === 'segretaria') {
       const me = data.players?.[state.myName];
-      if (me?.alive && data.segretariaResponse === null && state._segretariaResponseShown) {
+      if (me?.alive && !data.segretariaResponse && state._segretariaResponseShown) {
         state._segretariaResponseShown = false;
       }
     }
@@ -919,7 +1053,7 @@ const App = {
       const myVote = data.votes?.[state.myName];
       const roboticaBlocked = data.roboticaBlocked;
       const myPlayerData = data.players?.[state.myName];
-      const isLeccapiedeSwitch = role.id === 'leccapiedi' && myPlayerData?.switchedTeam;
+      const isLeccapiedeSwitch = role.id === 'leccapiedi' && (myPlayerData?.switchedTeam || state.leccapedeSwitch);
       if (!roboticaBlocked) {
         if (!myVote) {
           const isFifone = role.id === 'fifone';
@@ -1237,11 +1371,15 @@ const App = {
 
   async skipElimination() {
     const data = state.roomData;
+    const players = data.players || {};
+    const winResult = App._checkWinCondition(players, data.bullNames || []);
     await state.roomRef.update({
       votes: {}, secchioneBlocked: false, consiglio: null, voteMode: 'normal',
       rappresentante_used: false, coordinatore_used: false, secchione_used: false,
       roboticaBlocked: false,
-      status: 'night', turn: (data.turn || 1) + 1, nightActions: {},
+      status: winResult ? 'ended' : 'night',
+      winner: winResult || null,
+      turn: (data.turn || 1) + 1, nightActions: {},
     });
   },
 
@@ -1473,6 +1611,7 @@ const App = {
             fn: async () => {
               closeModal();
               state.leccapiedinChoiceMade = true;
+              state.leccapedeSwitch = true;
               await state.roomRef.child('players/' + state.myName + '/switchedTeam').set(true);
               await state.roomRef.child('leccapieliNotify').set(null);
               toast('Hai scelto di unirti ai bulli. Buona fortuna!');

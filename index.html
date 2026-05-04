@@ -37,7 +37,7 @@
   <div class="welcome-logo">🏫</div>
   <div class="welcome-title">Bulli &amp; Prof</div>
   <div class="welcome-sub">Nella scuola si nascondono dei bulli.<br>La comunità deve smascherarli.</div>
-  <div style="font-family:'Cinzel',serif;font-size:11px;color:rgba(255,255,255,0.3);margin-top:8px">v2.0</div>
+  <div style="font-family:'Cinzel',serif;font-size:11px;color:rgba(255,255,255,0.3);margin-top:8px">v2.1</div>
   <div class="welcome-btns">
     <button class="btn btn-gold btn-full" onclick="App.goTo('screen-mode')">🎭 Inizia a giocare</button>
     <button class="btn btn-ghost btn-full" onclick="App.goTo('screen-rules')">📖 Regolamento</button>
@@ -106,6 +106,27 @@
     <div id="lobby-guest-msg" style="display:none;text-align:center;padding:1.5rem 0">
       <p style="font-style:italic;color:var(--text-light);font-size:15px">In attesa che il Preside avvii la partita…</p>
     </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════ CONFIG RUOLI -->
+<div id="screen-config" class="screen" style="background:var(--night)">
+  <div class="screen-header">
+    <button class="back-btn" onclick="App.goTo('screen-lobby')">←</button>
+    <h2>Configura i Ruoli</h2>
+    <div style="font-family:'Cinzel',serif;font-size:11px;color:rgba(255,255,255,0.4)" id="config-slots-label"></div>
+  </div>
+  <div style="padding:1rem">
+    <div style="background:rgba(255,255,255,0.05);border-radius:10px;padding:12px 14px;margin-bottom:16px">
+      <div style="font-family:'Cinzel',serif;font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:1px;margin-bottom:8px">RUOLI FISSI</div>
+      <div id="config-fixed-roles" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+    </div>
+    <div style="font-family:'Cinzel',serif;font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:1px;margin-bottom:10px">SLOT LIBERI — scegli i ruoli</div>
+    <div id="config-slots" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px"></div>
+    <div style="font-family:'Cinzel',serif;font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:1px;margin-bottom:10px">POOL DISPONIBILE</div>
+    <div id="config-pool" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px"></div>
+    <button class="btn btn-gold btn-full" onclick="App.confirmConfig()">🎭 Conferma e distribuisci i ruoli</button>
   </div>
 </div>
 
