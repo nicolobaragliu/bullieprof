@@ -1,0 +1,415 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Palette scuola */
+  --night: #0d1117;
+  --night-mid: #161b22;
+  --night-light: #21262d;
+  --day: #f6f8fa;
+  --day-mid: #e8edf2;
+  --accent: #3b82f6;
+  --accent-dark: #1d4ed8;
+  --gold: #f59e0b;
+  --gold-light: #fef3c7;
+  --red: #ef4444;
+  --red-dark: #b91c1c;
+  --red-light: #fee2e2;
+  --green: #22c55e;
+  --green-dark: #15803d;
+  --green-light: #dcfce7;
+  --gray: #6b7280;
+  --gray-light: #f3f4f6;
+  --border: #e5e7eb;
+  --border-dark: #30363d;
+  --text: #111827;
+  --text-light: #6b7280;
+  --white: #ffffff;
+  --shadow: 0 4px 20px rgba(0,0,0,0.12);
+  --shadow-lg: 0 8px 40px rgba(0,0,0,0.2);
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --r-pill: 50px;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Crimson Text', serif;
+  background: var(--day);
+  color: var(--text);
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ─── SCREENS ─────────────────────────────────── */
+.screen { display: none; min-height: 100dvh; flex-direction: column; }
+.screen.active { display: flex; }
+
+/* ─── WELCOME ─────────────────────────────────── */
+#screen-welcome {
+  background: var(--night);
+  align-items: center; justify-content: center;
+  padding: 2rem 1.5rem; text-align: center;
+}
+.welcome-logo { font-size: 64px; margin-bottom: 1rem; }
+.welcome-title {
+  font-family: 'Cinzel', serif; font-size: 28px; font-weight: 700;
+  color: var(--white); letter-spacing: 2px; margin-bottom: 6px;
+}
+.welcome-sub {
+  font-size: 16px; font-style: italic; color: rgba(255,255,255,0.6);
+  margin-bottom: 2.5rem; line-height: 1.5;
+}
+.welcome-btns { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 300px; }
+
+/* ─── HEADER ──────────────────────────────────── */
+.screen-header {
+  background: var(--night); color: var(--white);
+  padding: 0.9rem 1rem; display: flex; align-items: center; gap: 10px;
+  position: sticky; top: 0; z-index: 20;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.screen-header h2 {
+  font-family: 'Cinzel', serif; font-size: 17px; font-weight: 600; flex: 1;
+}
+.back-btn {
+  background: transparent; border: none; color: var(--white);
+  font-size: 22px; cursor: pointer; padding: 4px 8px; border-radius: 8px;
+}
+.back-btn:hover { background: rgba(255,255,255,0.1); }
+.phase-badge {
+  font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.5px;
+  padding: 4px 12px; border-radius: var(--r-pill);
+}
+.phase-badge.night { background: #1e3a5f; color: #93c5fd; }
+.phase-badge.day   { background: var(--gold-light); color: #92400e; }
+
+/* ─── BUTTONS ─────────────────────────────────── */
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 13px 24px; border: none; border-radius: var(--r-pill);
+  font-family: 'Cinzel', serif; font-size: 14px; font-weight: 600;
+  letter-spacing: 0.5px; cursor: pointer; transition: all 0.18s;
+  -webkit-appearance: none;
+}
+.btn:active { transform: scale(0.96); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.btn-primary { background: var(--accent); color: var(--white); box-shadow: 0 4px 16px rgba(59,130,246,0.35); }
+.btn-primary:hover:not(:disabled) { background: var(--accent-dark); }
+.btn-gold { background: var(--gold); color: var(--white); box-shadow: 0 4px 16px rgba(245,158,11,0.35); }
+.btn-gold:hover:not(:disabled) { background: #d97706; }
+.btn-red { background: var(--red); color: var(--white); }
+.btn-red:hover:not(:disabled) { background: var(--red-dark); }
+.btn-green { background: var(--green); color: var(--white); }
+.btn-green:hover:not(:disabled) { background: var(--green-dark); }
+.btn-ghost { background: transparent; color: var(--white); border: 1.5px solid rgba(255,255,255,0.4); }
+.btn-ghost:hover:not(:disabled) { background: rgba(255,255,255,0.1); }
+.btn-outline { background: var(--white); color: var(--text); border: 1.5px solid var(--border); }
+.btn-outline:hover:not(:disabled) { background: var(--gray-light); }
+.btn-full { width: 100%; }
+.btn-sm { padding: 8px 16px; font-size: 12px; }
+.btn-danger { background: var(--red-light); color: var(--red-dark); border: 1.5px solid var(--red); }
+
+/* ─── LOBBY ───────────────────────────────────── */
+.lobby-body { padding: 1.25rem; max-width: 500px; margin: 0 auto; width: 100%; flex: 1; }
+.section-label {
+  font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 1.5px;
+  color: var(--text-light); text-transform: uppercase; margin-bottom: 10px; margin-top: 1.5rem;
+}
+.section-label:first-child { margin-top: 0; }
+
+.room-code-box {
+  background: var(--night); border-radius: var(--r-lg);
+  padding: 1.25rem; text-align: center; margin-bottom: 1.25rem;
+}
+.room-code-label { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 1px; color: rgba(255,255,255,0.6); margin-bottom: 6px; }
+.room-code-val {
+  font-family: 'Cinzel', serif; font-size: 44px; font-weight: 700;
+  color: var(--white); letter-spacing: 8px;
+}
+.room-code-hint { font-size: 13px; font-style: italic; color: rgba(255,255,255,0.5); margin-top: 6px; }
+
+.join-row { display: flex; gap: 8px; }
+.join-input {
+  flex: 1; padding: 12px 14px;
+  border: 1.5px solid var(--border); border-radius: var(--r-md);
+  font-family: 'Cinzel', serif; font-size: 22px; font-weight: 700;
+  letter-spacing: 6px; text-transform: uppercase; text-align: center;
+  color: var(--night); outline: none; background: var(--white);
+}
+.join-input:focus { border-color: var(--accent); }
+
+.name-input {
+  width: 100%; padding: 11px 14px;
+  border: 1.5px solid var(--border); border-radius: var(--r-md);
+  font-family: 'Crimson Text', serif; font-size: 17px;
+  color: var(--text); outline: none; background: var(--white);
+}
+.name-input:focus { border-color: var(--accent); }
+
+.player-list-lobby { display: flex; flex-direction: column; gap: 8px; }
+.player-lobby-row {
+  background: var(--white); border: 1.5px solid var(--border); border-radius: var(--r-md);
+  padding: 10px 14px; display: flex; align-items: center; gap: 10px;
+}
+.player-lobby-row.is-host { border-color: var(--gold); background: var(--gold-light); }
+.player-lobby-icon { font-size: 22px; flex-shrink: 0; }
+.player-lobby-name { font-family: 'Cinzel', serif; font-size: 13px; color: var(--text); flex: 1; }
+.badge {
+  font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 0.5px;
+  padding: 3px 8px; border-radius: var(--r-pill);
+}
+.badge-host    { background: var(--gold-light); color: #92400e; }
+.badge-ready   { background: var(--green-light); color: var(--green-dark); }
+.badge-waiting { background: var(--gray-light); color: var(--gray); }
+.online-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--green);
+  display: inline-block; animation: pulse 2s ease infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* ─── ROLE CARD ───────────────────────────────── */
+.role-reveal-screen {
+  background: var(--night); flex: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 2rem 1.5rem; text-align: center;
+}
+.role-card {
+  background: var(--night-light); border: 2px solid var(--border-dark);
+  border-radius: var(--r-lg); padding: 2rem 1.5rem;
+  max-width: 320px; width: 100%; margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-lg);
+}
+.role-card.team-bulli  { border-color: var(--red);   }
+.role-card.team-buoni  { border-color: var(--green);  }
+.role-card.team-solo   { border-color: var(--gold);   }
+.role-card.team-ambiguo{ border-color: #8b5cf6; }
+.role-icon { font-size: 56px; margin-bottom: 0.75rem; }
+.role-name {
+  font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700;
+  color: var(--white); margin-bottom: 8px;
+}
+.role-team-badge {
+  display: inline-block; font-family: 'Cinzel', serif; font-size: 11px;
+  letter-spacing: 1px; padding: 4px 12px; border-radius: var(--r-pill);
+  margin-bottom: 14px;
+}
+.team-bulli  .role-team-badge { background: var(--red-dark);   color: var(--white); }
+.team-buoni  .role-team-badge { background: var(--green-dark);  color: var(--white); }
+.team-solo   .role-team-badge { background: #b45309; color: var(--white); }
+.team-ambiguo .role-team-badge { background: #6d28d9; color: var(--white); }
+.role-desc {
+  font-size: 15px; font-style: italic; color: rgba(255,255,255,0.8);
+  line-height: 1.6;
+}
+.role-allies {
+  margin-top: 1rem; padding: 10px 14px;
+  background: rgba(255,255,255,0.05); border-radius: var(--r-md);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.role-allies-label { font-size: 11px; font-family: 'Cinzel', serif; letter-spacing: 1px; color: rgba(255,255,255,0.5); margin-bottom: 6px; }
+.role-allies-list { font-size: 15px; color: var(--white); font-weight: 600; }
+
+/* ─── NIGHT SCREEN ────────────────────────────── */
+#screen-night {
+  background: var(--night);
+  flex: 1; display: flex; flex-direction: column;
+}
+.night-body {
+  flex: 1; padding: 1.25rem;
+  max-width: 500px; margin: 0 auto; width: 100%;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.night-status {
+  text-align: center; padding: 1.5rem 1rem;
+  color: rgba(255,255,255,0.5); font-style: italic; font-size: 15px;
+}
+.night-action-card {
+  background: var(--night-light); border: 1.5px solid var(--border-dark);
+  border-radius: var(--r-lg); padding: 1.25rem;
+}
+.night-action-title {
+  font-family: 'Cinzel', serif; font-size: 14px; font-weight: 600;
+  color: var(--white); margin-bottom: 6px;
+}
+.night-action-desc {
+  font-size: 14px; font-style: italic;
+  color: rgba(255,255,255,0.6); margin-bottom: 14px; line-height: 1.4;
+}
+.player-select-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
+.player-select-btn {
+  background: var(--night); border: 1.5px solid var(--border-dark);
+  border-radius: var(--r-md); padding: 10px 12px;
+  font-family: 'Cinzel', serif; font-size: 12px; color: var(--white);
+  cursor: pointer; transition: all 0.15s; text-align: center;
+}
+.player-select-btn:hover { border-color: var(--accent); background: rgba(59,130,246,0.1); }
+.player-select-btn.selected { border-color: var(--accent); background: rgba(59,130,246,0.2); color: #93c5fd; }
+.player-select-btn.selected-red { border-color: var(--red); background: rgba(239,68,68,0.2); color: #fca5a5; }
+.player-select-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.voted-tag { font-size: 10px; opacity: 0.6; display: block; margin-top: 2px; }
+
+/* ─── DAY SCREEN ──────────────────────────────── */
+#screen-day { background: var(--day); flex: 1; display: flex; flex-direction: column; }
+.day-body {
+  flex: 1; padding: 1.25rem;
+  max-width: 500px; margin: 0 auto; width: 100%;
+  display: flex; flex-direction: column; gap: 12px;
+  padding-bottom: 2rem;
+}
+.announcement-card {
+  background: var(--night); border-radius: var(--r-lg);
+  padding: 1.25rem; text-align: center;
+}
+.announcement-icon { font-size: 36px; margin-bottom: 8px; }
+.announcement-text {
+  font-family: 'Cinzel', serif; font-size: 16px; color: var(--white);
+  line-height: 1.5;
+}
+.announcement-sub { font-size: 14px; font-style: italic; color: rgba(255,255,255,0.6); margin-top: 6px; }
+
+.day-action-card {
+  background: var(--white); border: 1.5px solid var(--border);
+  border-radius: var(--r-lg); padding: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.day-action-title {
+  font-family: 'Cinzel', serif; font-size: 14px; font-weight: 600;
+  color: var(--text); margin-bottom: 6px;
+}
+.day-action-desc {
+  font-size: 14px; font-style: italic; color: var(--text-light);
+  margin-bottom: 14px; line-height: 1.4;
+}
+
+.vote-results {
+  display: flex; flex-direction: column; gap: 6px; margin-top: 10px;
+}
+.vote-row {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--gray-light); border-radius: var(--r-sm); padding: 8px 12px;
+}
+.vote-name { font-family: 'Cinzel', serif; font-size: 13px; flex: 1; }
+.vote-count {
+  font-family: 'Cinzel', serif; font-size: 16px; font-weight: 700;
+  color: var(--accent);
+}
+.vote-bar {
+  height: 4px; background: var(--accent); border-radius: 4px;
+  transition: width 0.3s;
+}
+
+/* ─── ROLE PANEL (in game) ────────────────────── */
+.role-panel {
+  background: var(--night-light); border-radius: var(--r-lg);
+  padding: 1rem 1.25rem; border: 1.5px solid var(--border-dark);
+}
+.role-panel-header {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+}
+.role-panel-icon { font-size: 28px; }
+.role-panel-name {
+  font-family: 'Cinzel', serif; font-size: 15px; font-weight: 600; color: var(--white);
+}
+.role-panel-desc { font-size: 13px; font-style: italic; color: rgba(255,255,255,0.6); line-height: 1.4; }
+.ability-used { opacity: 0.4; text-decoration: line-through; }
+
+/* ─── EVENT LOG ───────────────────────────────── */
+.event-log {
+  background: var(--white); border: 1.5px solid var(--border);
+  border-radius: var(--r-lg); padding: 1rem; max-height: 180px; overflow-y: auto;
+}
+.event-log-title {
+  font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 1px;
+  color: var(--text-light); text-transform: uppercase; margin-bottom: 8px;
+}
+.event-item {
+  font-size: 14px; color: var(--text); padding: 4px 0;
+  border-bottom: 1px solid var(--border); line-height: 1.4;
+}
+.event-item:last-child { border: none; }
+.event-item.bad  { color: var(--red-dark); }
+.event-item.good { color: var(--green-dark); }
+.event-item.info { color: var(--accent-dark); }
+
+/* ─── PRESIDE PANEL ───────────────────────────── */
+.preside-panel {
+  background: var(--gold-light); border: 2px solid var(--gold);
+  border-radius: var(--r-lg); padding: 1rem 1.25rem;
+}
+.preside-panel-title {
+  font-family: 'Cinzel', serif; font-size: 13px; font-weight: 600;
+  color: #92400e; margin-bottom: 10px;
+}
+
+/* ─── WIN SCREEN ──────────────────────────────── */
+#screen-win {
+  background: var(--night); align-items: center; justify-content: center;
+  text-align: center; padding: 2rem;
+}
+.win-icon { font-size: 72px; margin-bottom: 1rem; animation: bounce 0.8s ease infinite alternate; }
+@keyframes bounce { from{transform:translateY(0)} to{transform:translateY(-12px)} }
+.win-title { font-family: 'Cinzel', serif; font-size: 26px; font-weight: 700; color: var(--gold); margin-bottom: 4px; }
+.win-sub { font-size: 17px; font-style: italic; color: rgba(255,255,255,0.8); margin-bottom: 2rem; }
+.win-roles-reveal {
+  background: var(--night-light); border-radius: var(--r-lg);
+  padding: 1rem; width: 100%; max-width: 340px; margin-bottom: 1.5rem; text-align: left;
+}
+.win-role-row {
+  display: flex; align-items: center; gap: 10px; padding: 7px 0;
+  border-bottom: 1px solid var(--border-dark);
+}
+.win-role-row:last-child { border: none; }
+.win-role-icon { font-size: 20px; flex-shrink: 0; }
+.win-role-name { font-family: 'Cinzel', serif; font-size: 12px; color: rgba(255,255,255,0.9); flex: 1; }
+.win-role-was  { font-size: 12px; font-style: italic; color: rgba(255,255,255,0.5); }
+
+/* ─── MODAL ───────────────────────────────────── */
+.modal-backdrop {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7); z-index: 100;
+  align-items: flex-end; justify-content: center;
+}
+.modal-backdrop.open { display: flex; }
+.modal-sheet {
+  background: var(--white); border-radius: var(--r-lg) var(--r-lg) 0 0;
+  padding: 1.5rem 1.5rem 2.5rem; width: 100%; max-width: 500px;
+  animation: slideUp 0.25s ease; max-height: 80dvh; overflow-y: auto;
+}
+@keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 4px; margin: 0 auto 1.25rem; }
+.modal-title { font-family: 'Cinzel', serif; font-size: 19px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.modal-desc { font-size: 16px; font-style: italic; color: var(--text-light); line-height: 1.5; margin-bottom: 1.25rem; }
+.modal-actions { display: flex; flex-direction: column; gap: 8px; }
+
+/* ─── TOAST ───────────────────────────────────── */
+#toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+  background: var(--night); color: var(--white); padding: 10px 20px;
+  border-radius: var(--r-pill); font-family: 'Cinzel', serif; font-size: 13px;
+  z-index: 200; transition: transform 0.3s ease; white-space: nowrap; pointer-events: none;
+}
+#toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ─── LOADING ─────────────────────────────────── */
+#loading {
+  position: fixed; inset: 0; background: var(--night);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 300; flex-direction: column; gap: 1rem;
+}
+.spinner {
+  width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.2);
+  border-top-color: var(--white); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+.loading-text { font-family: 'Cinzel', serif; font-size: 14px; color: rgba(255,255,255,0.7); }
+
+/* ─── DIVIDER ─────────────────────────────────── */
+.divider { display: flex; align-items: center; gap: 10px; margin: 0.75rem 0; }
+.divider::before, .divider::after { content:''; flex:1; height:1px; background:var(--border); }
+.divider span { font-family:'Cinzel',serif; font-size:11px; color:var(--text-light); }

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0d1117">
+  <title>Bulli &amp; Prof</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="spinner"></div>
+  <div class="loading-text">Preparando l'aula…</div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- MODAL -->
+<div class="modal-backdrop" id="modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div id="modal-title" class="modal-title">—</div>
+    <div id="modal-desc" class="modal-desc">—</div>
+    <div id="modal-actions" class="modal-actions"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ WELCOME -->
+<div id="screen-welcome" class="screen">
+  <div class="welcome-logo">🏫</div>
+  <div class="welcome-title">Bulli &amp; Prof</div>
+  <div class="welcome-sub">Nella scuola si nascondono dei bulli.<br>La comunità deve smascherarli.</div>
+  <div style="font-family:'Cinzel',serif;font-size:11px;color:rgba(255,255,255,0.3);margin-top:8px">v2.0</div>
+  <div class="welcome-btns">
+    <button class="btn btn-gold btn-full" onclick="App.goTo('screen-mode')">🎭 Inizia a giocare</button>
+    <button class="btn btn-ghost btn-full" onclick="App.goTo('screen-rules')">📖 Regolamento</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ MODE -->
+<div id="screen-mode" class="screen">
+  <div class="screen-header">
+    <button class="back-btn" onclick="App.goBack()">←</button>
+    <h2>Modalità</h2>
+  </div>
+  <div class="lobby-body" style="display:flex;flex-direction:column;gap:12px;justify-content:center;flex:1">
+    <button class="btn btn-primary btn-full" style="padding:18px;font-size:15px" onclick="App.startHost()">
+      👑 Sono il Preside<br><span style="font-size:11px;font-weight:400;opacity:0.8">Crea e gestisci la partita</span>
+    </button>
+    <button class="btn btn-outline btn-full" style="padding:18px;font-size:15px" onclick="App.goTo('screen-join')">
+      🎓 Sono uno studente<br><span style="font-size:11px;font-weight:400;opacity:0.8">Unisciti con il codice stanza</span>
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ JOIN -->
+<div id="screen-join" class="screen">
+  <div class="screen-header">
+    <button class="back-btn" onclick="App.goBack()">←</button>
+    <h2>Unisciti alla partita</h2>
+  </div>
+  <div class="lobby-body">
+    <div class="section-label">Il tuo nome</div>
+    <input id="join-name" class="name-input" type="text" placeholder="Come ti chiami?" maxlength="20">
+    <div class="section-label" style="margin-top:1.25rem">Codice stanza</div>
+    <div class="join-row">
+      <input id="join-code" class="join-input" type="text" maxlength="4" placeholder="XXXX">
+      <button class="btn btn-primary" onclick="App.joinRoom()">Entra</button>
+    </div>
+    <p style="font-size:13px;font-style:italic;color:var(--text-light);margin-top:0.5rem">
+      Inserisci il codice del Preside
+    </p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ LOBBY (HOST) -->
+<div id="screen-lobby" class="screen">
+  <div class="screen-header">
+    <button class="back-btn" onclick="App.leaveLobby()">←</button>
+    <h2>Sala d'attesa</h2>
+    <div><span class="online-dot"></span><span id="lobby-count" style="font-family:'Cinzel',serif;font-size:11px;color:white">0</span></div>
+  </div>
+  <div class="lobby-body">
+    <div class="room-code-box">
+      <div class="room-code-label">CODICE STANZA</div>
+      <div class="room-code-val" id="lobby-code">—</div>
+      <div class="room-code-hint">Condividi con i giocatori</div>
+    </div>
+
+    <div class="section-label">Giocatori connessi</div>
+    <div class="player-list-lobby" id="lobby-players"></div>
+
+    <div id="lobby-host-controls" style="display:none">
+      <p id="lobby-player-count-hint" style="font-size:14px;font-style:italic;color:var(--text-light);text-align:center;margin:0.75rem 0"></p>
+      <button class="btn btn-gold btn-full" style="margin-top:0.75rem" id="start-game-btn" onclick="App.startGame()">
+        🎭 Distribuisci i ruoli e inizia
+      </button>
+    </div>
+    <div id="lobby-guest-msg" style="display:none;text-align:center;padding:1.5rem 0">
+      <p style="font-style:italic;color:var(--text-light);font-size:15px">In attesa che il Preside avvii la partita…</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ ROLE REVEAL -->
+<div id="screen-role-reveal" class="screen" style="background:var(--night)">
+  <div class="screen-header">
+    <h2>Il tuo ruolo</h2>
+  </div>
+  <div class="role-reveal-screen">
+    <div class="role-card" id="role-card">
+      <div class="role-icon" id="role-icon">🎭</div>
+      <div class="role-name" id="role-name">—</div>
+      <div class="role-team-badge" id="role-team-badge">—</div>
+      <div class="role-desc" id="role-desc">—</div>
+      <div class="role-allies" id="role-allies" style="display:none">
+        <div class="role-allies-label">I TUOI COMPLICI</div>
+        <div class="role-allies-list" id="role-allies-list">—</div>
+      </div>
+    </div>
+    <p style="font-size:13px;font-style:italic;color:rgba(255,255,255,0.4);margin-bottom:1rem">
+      Mostra questo schermo solo a te stesso!
+    </p>
+    <button class="btn btn-ghost" onclick="App.confirmRoleRead()">✓ Ho letto il mio ruolo</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ WAITING (non-host between phases) -->
+<div id="screen-waiting" class="screen" style="background:var(--night)">
+  <div class="screen-header">
+    <h2>Bulli &amp; Prof</h2>
+    <div id="waiting-phase-badge" class="phase-badge night">Notte</div>
+  </div>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center">
+    <div style="font-size:56px;margin-bottom:1rem" id="waiting-icon">🌙</div>
+    <div style="font-family:'Cinzel',serif;font-size:18px;color:var(--white);margin-bottom:8px" id="waiting-title">È notte</div>
+    <div style="font-size:15px;font-style:italic;color:rgba(255,255,255,0.5)" id="waiting-desc">Tieni gli occhi chiusi…</div>
+  </div>
+  <!-- Exit button -->
+  <div style="padding:0.5rem 1rem 0;max-width:500px;margin:0 auto;width:100%;display:flex;justify-content:flex-end">
+    <button onclick="App.confirmLeave()" style="background:transparent;border:none;color:rgba(255,255,255,0.3);font-family:'Cinzel',serif;font-size:11px;cursor:pointer;padding:4px 8px;letter-spacing:0.5px;">
+      Esci dalla partita
+    </button>
+  </div>
+  <!-- Role panel always visible -->
+  <div style="padding:1rem;max-width:500px;margin:0 auto;width:100%">
+    <div class="role-panel" id="waiting-role-panel">
+      <div class="role-panel-header">
+        <div class="role-panel-icon" id="wp-role-icon">🎭</div>
+        <div>
+          <div class="role-panel-name" id="wp-role-name">—</div>
+        </div>
+      </div>
+      <div class="role-panel-desc" id="wp-role-desc">—</div>
+    </div>
+    <!-- Night action button (for roles that act at night) -->
+    <div id="night-action-area" style="margin-top:12px;display:none"></div>
+    <!-- Day action buttons -->
+    <div id="day-action-area" style="margin-top:12px;display:none"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ PRESIDE NIGHT -->
+<div id="screen-preside-night" class="screen" style="background:var(--night)">
+  <div class="screen-header">
+    <button class="back-btn" onclick="App.confirmLeave()">✕</button>
+    <h2>Fase Notturna</h2>
+    <div class="phase-badge night">Notte</div>
+  </div>
+  <div class="night-body">
+    <div class="preside-panel">
+      <div class="preside-panel-title">👑 Pannello Preside — Solo tu vedi questo</div>
+      <div id="preside-night-status" style="font-size:14px;color:#92400e;font-style:italic">In attesa delle azioni notturne…</div>
+    </div>
+
+    <div id="night-actions-list"></div>
+
+    <div id="preside-night-log" class="event-log" style="display:none">
+      <div class="event-log-title">Azioni notturne</div>
+      <div id="night-log-items"></div>
+    </div>
+
+    <button class="btn btn-gold btn-full" id="end-night-btn" onclick="App.endNight()" style="margin-top:auto;display:none">
+      ☀️ Termina la notte
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ PRESIDE DAY -->
+<div id="screen-preside-day" class="screen">
+  <div class="screen-header">
+    <button class="back-btn" onclick="App.confirmLeave()">✕</button>
+    <h2>Fase Diurna</h2>
+    <div class="phase-badge day">Giorno</div>
+  </div>
+  <div class="day-body">
+    <div id="day-announcement" class="announcement-card">
+      <div class="announcement-icon" id="day-ann-icon">☀️</div>
+      <div class="announcement-text" id="day-ann-text">Buongiorno a tutti!</div>
+      <div class="announcement-sub" id="day-ann-sub"></div>
+    </div>
+
+    <div class="day-action-card" id="vote-panel">
+      <div class="day-action-title">🗳️ Votazione</div>
+      <div class="day-action-desc" id="vote-desc">Chi vuoi eliminare? I giocatori stanno votando...</div>
+      <div id="vote-results-list" class="vote-results"></div>
+      <div id="vote-controls" style="margin-top:12px;display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+
+    <div class="event-log">
+      <div class="event-log-title">📜 Registro eventi</div>
+      <div id="event-log-items">
+        <div class="event-item info">La partita è iniziata.</div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-full" id="start-night-btn" onclick="App.startNight()" style="display:none">
+      🌙 Inizia la notte
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ WIN -->
+<div id="screen-win" class="screen">
+  <div class="win-icon" id="win-icon">🏆</div>
+  <div class="win-title" id="win-title">—</div>
+  <div class="win-sub" id="win-sub">hanno vinto!</div>
+  <div class="win-roles-reveal" id="win-roles-reveal"></div>
+  <button class="btn btn-gold" onclick="App.fullReset()">🔄 Nuova partita</button>
+</div>
+
+<!-- ═══════════════════════════════════ RULES -->
+<div id="screen-rules" class="screen">
+  <div class="screen-header">
+    <button class="back-btn" onclick="App.goBack()">←</button>
+    <h2>Regolamento</h2>
+  </div>
+  <div class="lobby-body" id="rules-body" style="padding-bottom:2rem">
+    <!-- Populated by JS -->
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════ ROLE REPORT (Preside only) -->
+<div id="screen-role-report" class="screen" style="background:var(--night)">
+  <div class="screen-header">
+    <h2>👑 Report Ruoli</h2>
+    <span style="font-family:'Cinzel',serif;font-size:11px;color:rgba(255,255,255,0.5)">Solo tu vedi questo</span>
+  </div>
+  <div style="padding:1rem;max-width:500px;margin:0 auto;width:100%;flex:1;overflow-y:auto">
+    <p style="font-size:14px;font-style:italic;color:rgba(255,255,255,0.5);text-align:center;margin-bottom:1rem">
+      Memorizza i ruoli — questa schermata non sarà più accessibile.
+    </p>
+    <div id="role-report-list"></div>
+  </div>
+  <div style="padding:1rem;max-width:500px;margin:0 auto;width:100%">
+    <button class="btn btn-gold btn-full" onclick="App.goTo('screen-preside-night');App._renderPresideNight()">
+      ✓ Ho preso nota — Avvia la notte
+    </button>
+  </div>
+</div>
+
+<script src="data.js?v=2"></script>
+<script src="app.js?v=2"></script>
+</body>
+</html>
