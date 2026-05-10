@@ -1,4 +1,4 @@
-// v2.1
+// v2.2
 'use strict';
 
 // ─── FIREBASE CONFIG ───────────────────────────────────────────────────────────
@@ -203,15 +203,14 @@ const App = {
     // Slot liberi
     const freeSlots = n - fixed.length;
 
-    // Genera suggerimento iniziale casuale (con abilità prima)
-    const suggested = generateRoles(n).filter(r => !fixed.includes(r) || fixed.splice(fixed.indexOf(r), 1) && false);
-    // Rebuild suggested from generateRoles minus fixed
+    // Genera suggerimento iniziale: usa generateRoles e rimuovi i fissi
     const allGenerated = generateRoles(n);
-    const fixedCopy = [...fixed];
+    // Rimuovi i fissi dall'array generato contando le occorrenze
+    const toRemove = [...fixed];
     const suggestedFree = [];
     for (const r of allGenerated) {
-      const fi = fixedCopy.indexOf(r);
-      if (fi !== -1) { fixedCopy.splice(fi, 1); continue; }
+      const fi = toRemove.indexOf(r);
+      if (fi !== -1) { toRemove.splice(fi, 1); continue; } // era un fisso, salta
       suggestedFree.push(r);
     }
 
@@ -312,11 +311,10 @@ const App = {
   async confirmConfig() {
     const names = state._configNames;
     const n = names.length;
-    const fixed = state._configFixed;
-    const free = state._configFree;
-    const total = fixed.length + free.length;
+    const fixed = [...state._configFixed]; // copia per non mutare lo state
+    const free = [...state._configFree];   // copia per non mutare lo state
 
-    if (total < n) {
+    if (fixed.length + free.length < n) {
       // Fill remaining with generici
       const generici = ['primo_banco','pettina','ultimo_banco','dorme','mangia','nota'];
       let gi = 0;
