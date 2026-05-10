@@ -1,4 +1,4 @@
-// v2.3
+// v2.4
 'use strict';
 
 // ─── FIREBASE CONFIG ───────────────────────────────────────────────────────────
@@ -1372,9 +1372,10 @@ const App = {
     const players = data.players || {};
     const winResult = App._checkWinCondition(players, data.bullNames || []);
     await state.roomRef.update({
-      votes: {}, secchioneBlocked: false, consiglio: null, voteMode: 'normal',
+      votes: {}, secchioneBlocked: false, secchioneWho: null, consiglio: null, voteMode: 'normal',
       rappresentante_used: false, coordinatore_used: false, secchione_used: false,
-      roboticaBlocked: false,
+      roboticaBlocked: false, playersDone: {},
+      bidelloResponse: null, segretariaResponse: null,
       status: winResult ? 'ended' : 'night',
       winner: winResult || null,
       turn: (data.turn || 1) + 1, nightActions: {},
