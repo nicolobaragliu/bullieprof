@@ -1,4 +1,4 @@
-// v2.2
+// v2.3
 'use strict';
 
 // ─── FIREBASE CONFIG ───────────────────────────────────────────────────────────
@@ -1385,7 +1385,8 @@ const App = {
     state.nightActionDone = false;
     state._bidelloResponseShown = false;
     state._segretariaResponseShown = false;
-    await state.roomRef.update({ status: 'night', nightActions: {}, votes: {}, roboticaBlocked: false, playersDone: {}, bidelloResponse: null, segretariaResponse: null });
+    const currentTurn = state.roomData?.turn || 1;
+    await state.roomRef.update({ status: 'night', nightActions: {}, votes: {}, roboticaBlocked: false, playersDone: {}, bidelloResponse: null, segretariaResponse: null, turn: currentTurn + 1 });
   },
 
   _checkWinCondition(players, bullNames) {
