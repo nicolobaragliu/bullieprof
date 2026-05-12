@@ -1,4 +1,4 @@
-// v2.6
+// v2.9
 'use strict';
 
 // ─── FIREBASE CONFIG ───────────────────────────────────────────────────────────
@@ -188,7 +188,7 @@ const App = {
     const names = Object.keys(players).filter(n => n !== state.myName);
     const n = names.length;
     if (n < 6) { toast('Servono almeno 6 giocatori (escluso Preside)'); return; }
-    if (n > 16) { toast('Massimo 16 giocatori'); return; }
+    if (n > 20) { toast('Massimo 20 giocatori'); return; }
     state._configNames = names;
     App._openConfig(n, names);
   },
@@ -1404,7 +1404,12 @@ const App = {
     const aliveLeccapiedi = alive.find(p => p.role === 'leccapiedi' && p.switchedTeam);
     const aliveFurbetto = alive.find(p => p.role === 'furbetto');
 
-    const evilCount = aliveBulli.length + aliveOmertoso.length + (aliveLeccapiedi ? 1 : 0);
+    // Omertoso e Leccapiedi contano come evil solo se ci sono ancora bulli vivi
+    // (se tutti i bulli muoiono, perdono con loro)
+    const bullAlive = aliveBulli.length > 0;
+    const leccaConta = aliveLeccapiedi && bullAlive;
+    const omertosoConta = bullAlive ? aliveOmertoso.length : 0;
+    const evilCount = aliveBulli.length + omertosoConta + (leccaConta ? 1 : 0);
     const goodCount = alive.filter(p => {
       if (p.role === 'bullo') return false;          // evil
       if (p.role === 'omertoso') return false;        // evil
@@ -1418,8 +1423,10 @@ const App = {
     const aliveNonFurbetto = alive.filter(p => p.role !== 'furbetto');
     if (aliveFurbetto && aliveNonFurbetto.length === 0) return 'furbetto';
     if (aliveFurbetto && aliveBulli.length === 0 && aliveOmertoso.length === 0 && !aliveLeccapiedi && goodCount <= 1) return 'furbetto';
-    if (aliveBulli.length === 0 && !aliveFurbetto) return 'buoni';
-    if (aliveBulli.length === 0 && aliveFurbetto && goodCount > 1) return null; // partita continua
+    if (evilCount === 0 && !aliveFurbetto) return 'buoni';
+    if (evilCount === 0 && aliveFurbetto && goodCount > 1) return null; // partita continua
+    // I bulli vincono se il fronte evil (bulli + omertoso + leccapiedi convertito)
+    // raggiunge la parità con i buoni — anche se i bulli originali sono tutti morti
     if (evilCount >= goodCount && evilCount > 0) return 'bulli';
     return null;
   },

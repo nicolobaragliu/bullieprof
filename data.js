@@ -351,9 +351,10 @@ const ROLE_POOL = [
 
 // Quanti bulli in base ai giocatori
 function getBulliCount(n) {
-  if (n <= 8)  return 2;
-  if (n <= 12) return 3;
-  return 4;
+  if (n <= 9)  return 2;
+  if (n <= 13) return 3;
+  if (n <= 17) return 4;
+  return 5;
 }
 
 // Genera array ruoli completo per n giocatori
