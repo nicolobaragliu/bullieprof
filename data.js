@@ -154,7 +154,7 @@ const ROLES = {
     name: 'Prof di Chimica',
     team: 'buoni',
     icon: '🧪',
-    desc: 'Una volta per partita prepari un intruglio per un giocatore. Se è un bullo muore. Se è innocente muore l\'innocente. Se i bulli ti eliminano quella stessa notte, muorete entrambi.',
+    desc: 'Una volta per partita prepari un intruglio per un giocatore. Se è un bullo muore. Se è innocente muore l\'innocente. Se i bulli ti eliminano quella stessa notte, morite entrambi.',
     nightAction: true,
     dayAction: false,
     isAmbiguous: false,
