@@ -9,7 +9,7 @@
 
 const NUM_GAMES   = parseInt(process.argv[2]) || 3000;
 const FIXED_N     = parseInt(process.argv[3]) || 0; // 0 = casuale
-const MAX_TURNS   = 30; // sicurezza anti-loop
+const MAX_TURNS   = 50; // sicurezza anti-loop
 
 // ─── RUOLI (estratto da data.js) ──────────────────────────────────
 const ROLES = {
