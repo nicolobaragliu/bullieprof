@@ -1,4 +1,4 @@
-// v2.4
+// v2.6
 'use strict';
 
 // ─── FIREBASE CONFIG ───────────────────────────────────────────────────────────
@@ -514,6 +514,7 @@ const App = {
     if (state._lastNightTurn !== currentTurn) {
       state._lastNightTurn = currentTurn;
       state.nightActionDone = false;
+      state.abilityUsed = false; // resetta abilità ogni nuova notte
     }
     // Check if THIS player has already acted this turn
     if (!state.nightActionDone) {
@@ -572,7 +573,7 @@ const App = {
     });
     const allDone = adjustedRoles.every(a => a.done) || adjustedRoles.length === 0;
 
-    let statusHtml = presentRoles.map(a =>
+    let statusHtml = adjustedRoles.map(a =>
       `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.1)">
         <span>${a.done ? '✅' : '⏳'}</span>
         <span style="font-size:14px;color:var(--night)">${a.label}</span>
@@ -1070,11 +1071,17 @@ const App = {
                   }).join('') + '</div>';
               }
             }
+            // In modalità consiglio, mostra solo i 2 candidati
+            const voteMode = data.voteMode || 'normal';
+            const consiglioCandidates = data.consiglio || [];
+            const votablePlayers = voteMode === 'consiglio' && consiglioCandidates.length > 0
+              ? alivePlayers.filter(p => consiglioCandidates.includes(p.name))
+              : alivePlayers;
             html += `<div class="night-action-card" style="margin-bottom:8px">
               <div class="night-action-title">🗳️ Il tuo voto</div>
-              <div class="night-action-desc">Chi vuoi eliminare?</div>
+              <div class="night-action-desc">${voteMode === 'consiglio' ? '📁 Consiglio Straordinario — scegli tra i candidati' : 'Chi vuoi eliminare?'}</div>
               ${leccapiedeInfo}
-              <div class="player-select-grid">${alivePlayers.map(p =>
+              <div class="player-select-grid">${votablePlayers.map(p =>
                 `<button class="player-select-btn" onclick="App.castVote('${p.name}')">${p.name}</button>`
               ).join('')}</div>
             </div>`;
