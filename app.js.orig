@@ -1,4 +1,4 @@
-// v3.0
+// v2
 'use strict';
 
 // ─── FIREBASE CONFIG ───────────────────────────────────────────────────────────
@@ -46,7 +46,6 @@ const state = {
   abilityUsed: false,
   nightActionDone: false,
   leccapiedinChoiceMade: false,
-  leccapedeSwitch: false,
 };
 
 // ─── FIREBASE ──────────────────────────────────────────────────────────────────
@@ -185,158 +184,26 @@ const App = {
   async startGame() {
     const snap = await state.roomRef.child('players').once('value');
     const players = snap.val();
-    const names = Object.keys(players).filter(n => n !== state.myName);
+    const names = Object.keys(players).filter(n => n !== state.myName); // exclude preside
     const n = names.length;
     if (n < 6) { toast('Servono almeno 6 giocatori (escluso Preside)'); return; }
-    if (n > 20) { toast('Massimo 20 giocatori'); return; }
-    state._configNames = names;
-    App._openConfig(n, names);
-  },
-
-  _openConfig(n, names) {
-    // Ruoli fissi
-    const bullCount = getBulliCount(n);
-    const fixed = [];
-    for (let i = 0; i < bullCount; i++) fixed.push('bullo');
-    fixed.push('segretaria');
-
-    // Slot liberi
-    const freeSlots = n - fixed.length;
-
-    // Genera suggerimento iniziale: usa generateRoles e rimuovi i fissi
-    const allGenerated = generateRoles(n);
-    // Rimuovi i fissi dall'array generato contando le occorrenze
-    const toRemove = [...fixed];
-    const suggestedFree = [];
-    for (const r of allGenerated) {
-      const fi = toRemove.indexOf(r);
-      if (fi !== -1) { toRemove.splice(fi, 1); continue; } // era un fisso, salta
-      suggestedFree.push(r);
-    }
-
-    state._configFixed = fixed;
-    state._configFree = suggestedFree.slice(0, freeSlots);
-    state._configSlots = freeSlots;
-
-    App._renderConfig();
-    App.goTo('screen-config');
-  },
-
-  _renderConfig() {
-    const fixed = state._configFixed;
-    const free = state._configFree;
-    const slots = state._configSlots;
-
-    // Label slot
-    document.getElementById('config-slots-label').textContent = `${slots} slot liberi`;
-
-    // Fixed roles pills
-    const fixedEl = document.getElementById('config-fixed-roles');
-    fixedEl.innerHTML = fixed.map(r => {
-      const role = ROLES[r];
-      return `<div style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:20px;padding:4px 12px;font-size:12px;color:#fca5a5;display:flex;align-items:center;gap:4px">
-        <span>${role?.icon || '❓'}</span><span style="font-family:'Cinzel',serif">${role?.name || r}</span>
-      </div>`;
-    }).join('');
-
-    // Slot liberi
-    const slotsEl = document.getElementById('config-slots');
-    slotsEl.innerHTML = free.map((r, i) => {
-      const role = ROLES[r];
-      const isMotoria = r === 'prof_motoria_1' || r === 'prof_motoria_2';
-      return `<div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px">
-        <span style="font-size:20px">${role?.icon || '❓'}</span>
-        <div style="flex:1">
-          <div style="font-family:'Cinzel',serif;font-size:13px;color:white">${role?.name || r}${isMotoria ? ' <span style="font-size:10px;color:rgba(255,255,255,0.4)">(coppia)</span>' : ''}</div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px">${role?.team || ''}</div>
-        </div>
-        <button onclick="App._configRemoveSlot(${i})" style="background:rgba(239,68,68,0.2);border:none;border-radius:6px;padding:4px 10px;color:#fca5a5;font-size:12px;cursor:pointer">✕</button>
-      </div>`;
-    }).join('');
-
-    // Pool disponibile
-    const usedInFree = new Set(free);
-    // Prof motoria: se uno è usato, entrambi sono usati
-    const motoriaUsed = free.includes('prof_motoria_1') || free.includes('prof_motoria_2');
-
-    const POOL_WITH_ABILITY = [
-      'prof_sostegno','bidello','secchione','prof_religione','rappresentante_classe',
-      'rappresentante_libri','coordinatore','prof_chimica','prof_robotica',
-      'prof_motoria_1','furbetto','fifone','omertoso','leccapiedi','bullo_pentito'
-    ];
-    const GENERICI = ['primo_banco','pettina','ultimo_banco','dorme','mangia','nota'];
-    const allPool = [...POOL_WITH_ABILITY, ...GENERICI];
-
-    const freeSlotsLeft = slots - free.length;
-    const poolEl = document.getElementById('config-pool');
-    poolEl.innerHTML = allPool.map(r => {
-      if (r === 'prof_motoria_2') return ''; // mostra solo _1
-      const role = ROLES[r];
-      const isMotoria = r === 'prof_motoria_1';
-      const used = isMotoria ? motoriaUsed : usedInFree.has(r);
-      const needsTwo = isMotoria;
-      const canAdd = !used && freeSlotsLeft >= (needsTwo ? 2 : 1);
-      const isFixed = state._configFixed.includes(r);
-      if (isFixed) return '';
-      return `<button onclick="App._configAddSlot('${r}')" ${(!canAdd || used) ? 'disabled' : ''} style="background:${used ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.08)'};border:1px solid ${used ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.2)'};border-radius:20px;padding:5px 12px;font-size:12px;color:${used ? 'rgba(255,255,255,0.3)' : 'white'};cursor:${canAdd && !used ? 'pointer' : 'default'};display:inline-flex;align-items:center;gap:4px">
-        <span>${role?.icon || '❓'}</span>
-        <span style="font-family:'Cinzel',serif">${role?.name || r}${isMotoria ? ' ×2' : ''}</span>
-        ${used ? '<span style="font-size:10px">✓</span>' : ''}
-      </button>`;
-    }).join('');
-  },
-
-  _configRemoveSlot(i) {
-    const r = state._configFree[i];
-    if (r === 'prof_motoria_1' || r === 'prof_motoria_2') {
-      state._configFree = state._configFree.filter(x => x !== 'prof_motoria_1' && x !== 'prof_motoria_2');
-    } else {
-      state._configFree.splice(i, 1);
-    }
-    App._renderConfig();
-  },
-
-  _configAddSlot(r) {
-    const freeSlotsLeft = state._configSlots - state._configFree.length;
-    if (r === 'prof_motoria_1') {
-      if (freeSlotsLeft < 2) { toast('Non ci sono abbastanza slot per la coppia Motoria'); return; }
-      state._configFree.push('prof_motoria_1', 'prof_motoria_2');
-    } else {
-      if (freeSlotsLeft < 1) { toast('Nessuno slot libero'); return; }
-      state._configFree.push(r);
-    }
-    App._renderConfig();
-  },
-
-  async confirmConfig() {
-    const names = state._configNames;
-    const n = names.length;
-    const fixed = [...state._configFixed]; // copia per non mutare lo state
-    const free = [...state._configFree];   // copia per non mutare lo state
-
-    if (fixed.length + free.length < n) {
-      // Fill remaining with generici
-      const generici = ['primo_banco','pettina','ultimo_banco','dorme','mangia','nota'];
-      let gi = 0;
-      while (fixed.length + free.length < n) free.push(generici[gi++ % generici.length]);
-    }
-    if (fixed.length + free.length > n) {
-      toast('Hai troppi ruoli selezionati!'); return;
-    }
-
-    const roleIds = [...fixed, ...free];
-    // Shuffle
-    for (let i = roleIds.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [roleIds[i], roleIds[j]] = [roleIds[j], roleIds[i]];
-    }
+    if (n > 16) { toast('Massimo 16 giocatori'); return; }
 
     showLoading('Distribuendo i ruoli…');
+    const roleIds = generateRoles(n);
     const updates = {};
+
+    // Assign roles randomly
     names.forEach((name, i) => {
       updates[`players/${name}/role`] = roleIds[i];
     });
+
+    // Find bulli and complici for notifications
     const bullNames = names.filter((n2, i) => roleIds[i] === 'bullo');
+    const omertNames = names.filter((n2, i) => roleIds[i] === 'omertoso');
+    const pentNames  = names.filter((n2, i) => roleIds[i] === 'bullo_pentito');
+
+    // Store allies info (encrypted enough for this use case)
     updates['bullNames'] = bullNames;
     updates['status'] = 'role-reveal';
     updates['turn'] = 1;
@@ -346,6 +213,7 @@ const App = {
 
     await state.roomRef.update(updates);
     hideLoading();
+    // Show role report to preside
     App._showRoleReport(names, roleIds);
   },
 
@@ -423,19 +291,6 @@ const App = {
     if (status === 'ended') {
       App._showWin(data);
     }
-
-    // Leccapiedi: mostra modal scelta quando rimane 1 bullo
-    if (!state.isHost && data.leccapieliNotify === state.myName && !state.leccapiedinChoiceMade) {
-      App._showLeccapiedeModal(data);
-    }
-
-    // Segretaria: se è stata resuscitata, resetta il flag risposta
-    if (!state.isHost && state.myRole === 'segretaria') {
-      const me = data.players?.[state.myName];
-      if (me?.alive && !data.segretariaResponse && state._segretariaResponseShown) {
-        state._segretariaResponseShown = false;
-      }
-    }
   },
 
   // ── Role Reveal ─────────────────────────────────────────────────────────────
@@ -465,15 +320,6 @@ const App = {
         alliesDiv.style.display = '';
         if (role.id === 'bullo_pentito') {
           document.querySelector('.role-allies-label').textContent = 'I BULLI (non puoi rivelarli!)';
-          // Avviso vincolo bullo pentito
-          const warnEl = document.getElementById('bullo-pentito-warn');
-          if (!warnEl) {
-            const w = document.createElement('div');
-            w.id = 'bullo-pentito-warn';
-            w.style.cssText = 'background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);border-radius:8px;padding:10px 12px;margin-top:10px;font-size:12px;color:#fca5a5;line-height:1.5';
-            w.innerHTML = '⚠️ <strong>Attenzione:</strong> conosci i bulli ma non puoi rivelarli. Se lo fai, i bulli vincono automaticamente.';
-            alliesDiv.appendChild(w);
-          }
         } else if (role.id === 'omertoso') {
           document.querySelector('.role-allies-label').textContent = 'I BULLI (taci!)';
         }
@@ -514,7 +360,6 @@ const App = {
     if (state._lastNightTurn !== currentTurn) {
       state._lastNightTurn = currentTurn;
       state.nightActionDone = false;
-      state.abilityUsed = false; // resetta abilità ogni nuova notte
     }
     // Check if THIS player has already acted this turn
     if (!state.nightActionDone) {
@@ -573,7 +418,7 @@ const App = {
     });
     const allDone = adjustedRoles.every(a => a.done) || adjustedRoles.length === 0;
 
-    let statusHtml = adjustedRoles.map(a =>
+    let statusHtml = presentRoles.map(a =>
       `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.1)">
         <span>${a.done ? '✅' : '⏳'}</span>
         <span style="font-size:14px;color:var(--night)">${a.label}</span>
@@ -584,24 +429,6 @@ const App = {
 
     const endBtn = document.getElementById('end-night-btn');
     if (endBtn) endBtn.style.display = allDone ? '' : 'none';
-
-    // Pulsante emergenza: sempre visibile dopo turno 1, sblocca notte in caso di stallo
-    let forceBtn = document.getElementById('force-end-night-btn');
-    if (!forceBtn) {
-      forceBtn = document.createElement('button');
-      forceBtn.id = 'force-end-night-btn';
-      forceBtn.className = 'btn btn-sm btn-full';
-      forceBtn.style.cssText = 'margin-top:8px;background:rgba(255,255,255,0.06);border:1px dashed rgba(255,255,255,0.2);color:rgba(255,255,255,0.4);font-size:11px;letter-spacing:0.5px';
-      forceBtn.textContent = '⚠️ Forza fine notte (emergenza)';
-      forceBtn.onclick = () => {
-        if (confirm('Forzare la fine della notte? Le azioni non completate verranno saltate.')) {
-          App.endNight();
-        }
-      };
-      if (endBtn) endBtn.parentNode.insertBefore(forceBtn, endBtn.nextSibling);
-    }
-    // Mostra solo se non allDone e almeno turno 1
-    if (forceBtn) forceBtn.style.display = !allDone ? '' : 'none';
 
     // If status is role-reveal, show "start night" button instead
     if (state.roomData?.status === 'role-reveal') {
@@ -719,17 +546,10 @@ const App = {
         '<div class="player-select-grid">' + playerBtns + '</div>' +
         '</div>';
     } else if (role.id === 'prof_sostegno') {
-      const lastProt = state.roomData?.lastProtected;
-      const sostegnoBtns = alivePlayers
-        .filter(p => p.name !== lastProt)
-        .map(p => `<button class="player-select-btn" onclick="App.selectNightTarget('${p.name}')" id="nbtn-${p.name}">${p.name}</button>`)
-        .join('');
-      const skipNote = lastProt ? `<div style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:6px">Non puoi proteggere di nuovo <strong style="color:white">${lastProt}</strong></div>` : '';
       html = `<div class="night-action-card">
         <div class="night-action-title">🛡️ Chi vuoi proteggere?</div>
         <div class="night-action-desc">Scegli un giocatore da proteggere stanotte. Non puoi scegliere lo stesso di ieri.</div>
-        ${skipNote}
-        <div class="player-select-grid">${sostegnoBtns}</div>
+        <div class="player-select-grid">${playerBtns}</div>
       </div>`;
     } else if (role.id === 'segretaria') {
       html = `<div class="night-action-card">
@@ -877,13 +697,10 @@ const App = {
         addEliminated(target);
         events.push({ text: `🧪 L'intruglio della Prof di Chimica ha eliminato ${target}!`, type: 'good' });
         announcements.push({ text: `L'intruglio ha funzionato! Qualcuno è stato eliminato.`, type: 'good' });
-        // If bulli targeted chimica the same night, both die
-        if (bulloTarget && bulloTarget === chimicaAction.actor && players[chimicaAction.actor]?.alive) {
+        // If bullo targeted chimica same night, both die
+        if (bulloTarget && players['__chimica_actor']?.name && bulloTarget === actions['__chimica']?.actor) {
           players[chimicaAction.actor].alive = false;
-          addEliminated(chimicaAction.actor);
           events.push({ text: `🧪 La Prof di Chimica è stata eliminata dai bulli nella stessa notte!`, type: 'bad' });
-          announcements.push({ text: `La Prof di Chimica e la vittima dell'intruglio sono stati eliminati entrambi!`, type: 'bad' });
-          bulloTarget = null; // già gestito, non eliminare di nuovo
         }
       } else {
         // Innocent dies
@@ -958,7 +775,7 @@ const App = {
       eliminated,
       nightAnnouncements: announcements,
       nightActions: {}, playersDone: {},
-      lastProtected: protected_ || null,
+      campionatiUsed: false,
       status: winResult ? 'ended' : 'day',
       winner: winResult || null,
       roboticaBlocked: !!(bulloTarget && players[bulloTarget]?.role === 'prof_robotica'),
@@ -1069,37 +886,14 @@ const App = {
       // Vote button
       const myVote = data.votes?.[state.myName];
       const roboticaBlocked = data.roboticaBlocked;
-      const myPlayerData = data.players?.[state.myName];
-      const isLeccapiedeSwitch = role.id === 'leccapiedi' && (myPlayerData?.switchedTeam || state.leccapedeSwitch);
       if (!roboticaBlocked) {
         if (!myVote) {
           const isFifone = role.id === 'fifone';
           if (!isFifone) {
-            // Leccapiede convertito: mostra i voti degli alleati bulli come fanno i bulli stessi
-            let leccapiedeInfo = '';
-            if (isLeccapiedeSwitch) {
-              const votes = data.votes || {};
-              const bulli = Object.values(data.players || {}).filter(p => p.role === 'bullo' && p.alive);
-              if (bulli.length > 0) {
-                leccapiedeInfo = '<div style="background:rgba(239,68,68,0.1);border-radius:8px;padding:8px 10px;margin-bottom:10px">' +
-                  '<div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:4px;font-family:\"Cinzel\",serif;letter-spacing:0.5px">VOTI DEI BULLI</div>' +
-                  bulli.map(b => {
-                    const v = votes[b.name];
-                    return '<div style="font-size:12px;padding:2px 0">' + b.name + ': ' + (v ? '<strong>' + v + '</strong>' : '⏳') + '</div>';
-                  }).join('') + '</div>';
-              }
-            }
-            // In modalità consiglio, mostra solo i 2 candidati
-            const voteMode = data.voteMode || 'normal';
-            const consiglioCandidates = data.consiglio || [];
-            const votablePlayers = voteMode === 'consiglio' && consiglioCandidates.length > 0
-              ? alivePlayers.filter(p => consiglioCandidates.includes(p.name))
-              : alivePlayers;
             html += `<div class="night-action-card" style="margin-bottom:8px">
               <div class="night-action-title">🗳️ Il tuo voto</div>
-              <div class="night-action-desc">${voteMode === 'consiglio' ? '📁 Consiglio Straordinario — scegli tra i candidati' : 'Chi vuoi eliminare?'}</div>
-              ${leccapiedeInfo}
-              <div class="player-select-grid">${votablePlayers.map(p =>
+              <div class="night-action-desc">Chi vuoi eliminare?</div>
+              <div class="player-select-grid">${alivePlayers.map(p =>
                 `<button class="player-select-btn" onclick="App.castVote('${p.name}')">${p.name}</button>`
               ).join('')}</div>
             </div>`;
@@ -1143,6 +937,24 @@ const App = {
     toast('Voto inviato!');
     // Auto-check fifone
     App._applyFifoneVote();
+  },
+
+  async _applyFifoneVote() {
+    const data = state.roomData;
+    if (!data) return;
+    const players = data.players || {};
+    const fifone = Object.values(players).find(p => p.role === 'fifone' && p.alive);
+    if (!fifone || data.votes?.[fifone.name]) return;
+    const votes = data.votes || {};
+    // Wait until at least half the others have voted before auto-following
+    const alivePlayers = Object.values(players).filter(p => p.alive && p.role !== 'preside' && p.role !== 'fifone');
+    const votedCount = Object.keys(votes).filter(n => n !== fifone.name).length;
+    if (votedCount < Math.ceil(alivePlayers.length / 2)) return;
+    const counts = {};
+    Object.values(votes).forEach(v => { if(v) counts[v] = (counts[v]||0)+1; });
+    if (Object.keys(counts).length === 0) return;
+    const leader = Object.entries(counts).sort((a,b)=>b[1]-a[1])[0][0];
+    await state.roomRef.child('votes/' + fifone.name).set(leader);
   },
 
   // Day abilities
@@ -1394,16 +1206,10 @@ const App = {
 
   async skipElimination() {
     const data = state.roomData;
-    const players = data.players || {};
-    const winResult = App._checkWinCondition(players, data.bullNames || []);
     await state.roomRef.update({
-      votes: {}, secchioneBlocked: false, secchioneWho: null, consiglio: null, voteMode: 'normal',
+      votes: {}, secchioneBlocked: false, consiglio: null, voteMode: 'normal',
       rappresentante_used: false, coordinatore_used: false, secchione_used: false,
-      roboticaBlocked: false, playersDone: {},
-      bidelloResponse: null, segretariaResponse: null,
-      status: winResult ? 'ended' : 'night',
-      winner: winResult || null,
-      turn: (data.turn || 1) + 1, nightActions: {},
+      status: 'night', turn: (data.turn || 1) + 1, nightActions: {},
     });
   },
 
@@ -1411,8 +1217,7 @@ const App = {
     state.nightActionDone = false;
     state._bidelloResponseShown = false;
     state._segretariaResponseShown = false;
-    const currentTurn = state.roomData?.turn || 1;
-    await state.roomRef.update({ status: 'night', nightActions: {}, votes: {}, roboticaBlocked: false, playersDone: {}, bidelloResponse: null, segretariaResponse: null, turn: currentTurn + 1 });
+    await state.roomRef.update({ status: 'night', nightActions: {}, votes: {}, roboticaBlocked: false, playersDone: {}, bidelloResponse: null, segretariaResponse: null });
   },
 
   _checkWinCondition(players, bullNames) {
@@ -1422,12 +1227,7 @@ const App = {
     const aliveLeccapiedi = alive.find(p => p.role === 'leccapiedi' && p.switchedTeam);
     const aliveFurbetto = alive.find(p => p.role === 'furbetto');
 
-    // Omertoso e Leccapiedi contano come evil solo se ci sono ancora bulli vivi
-    // (se tutti i bulli muoiono, perdono con loro)
-    const bullAlive = aliveBulli.length > 0;
-    const leccaConta = aliveLeccapiedi && bullAlive;
-    const omertosoConta = bullAlive ? aliveOmertoso.length : 0;
-    const evilCount = aliveBulli.length + omertosoConta + (leccaConta ? 1 : 0);
+    const evilCount = aliveBulli.length + aliveOmertoso.length + (aliveLeccapiedi ? 1 : 0);
     const goodCount = alive.filter(p => {
       if (p.role === 'bullo') return false;          // evil
       if (p.role === 'omertoso') return false;        // evil
@@ -1437,14 +1237,8 @@ const App = {
       return true;
     }).length;
 
-    // Furbetto: vince se i bulli sono tutti morti e rimane con ≤1 buono
-    const aliveNonFurbetto = alive.filter(p => p.role !== 'furbetto');
-    if (aliveFurbetto && aliveNonFurbetto.length === 0) return 'furbetto';
-    if (aliveFurbetto && aliveBulli.length === 0 && aliveOmertoso.length === 0 && !aliveLeccapiedi && goodCount <= 1) return 'furbetto';
-    if (evilCount === 0 && !aliveFurbetto) return 'buoni';
-    if (evilCount === 0 && aliveFurbetto && goodCount > 1) return null; // partita continua
-    // I bulli vincono se il fronte evil (bulli + omertoso + leccapiedi convertito)
-    // raggiunge la parità con i buoni — anche se i bulli originali sono tutti morti
+    if (aliveFurbetto && alive.length === 1) return 'furbetto';
+    if (aliveBulli.length === 0) return 'buoni';
     if (evilCount >= goodCount && evilCount > 0) return 'bulli';
     return null;
   },
@@ -1477,6 +1271,13 @@ const App = {
     el.innerHTML = [...(events||[])].reverse().slice(0,10).map(e =>
       `<div class="event-item ${e.type||''}">${e.text}</div>`
     ).join('') || '<div class="event-item info">La partita è iniziata.</div>';
+  },
+
+  async useSecchioneAbility() {
+    state.abilityUsed = true;
+    await state.roomRef.update({ secchioneBlocked: true });
+    await state.roomRef.child('events/' + Date.now()).set({ text:"📚 Il Secchione ha bloccato l\'eliminazione e rivelato il suo ruolo!", type:'info' });
+    toast('Hai bloccato l\'eliminazione! Il tuo ruolo è stato rivelato.');
   },
 
   async useVotoSegreto() {
@@ -1625,43 +1426,6 @@ const App = {
     if (!Object.keys(counts).length) return;
     const leader = Object.entries(counts).sort((a,b)=>b[1]-a[1])[0][0];
     await state.roomRef.child('votes/' + fifone.name).set(leader);
-  },
-
-  _showLeccapiedeModal(data) {
-    // Solo una volta per partita
-    if (state.leccapiedinChoiceMade) return;
-    const bullo = Object.values(data.players || {}).find(p => p.role === 'bullo' && p.alive);
-    const bulloName = bullo ? bullo.name : 'il bullo rimasto';
-    setTimeout(() => {
-      showModal({
-        title: '🐍 Un bullo ha bisogno di te!',
-        desc: 'Rimane un solo bullo in vita. Vuoi unirti a lui? Se accetti, vincete insieme — ma lui non saprà chi sei.',
-        actions: [
-          {
-            label: '🤝 Sì, mi unisco',
-            style: 'btn-danger',
-            fn: async () => {
-              closeModal();
-              state.leccapiedinChoiceMade = true;
-              state.leccapedeSwitch = true;
-              await state.roomRef.child('players/' + state.myName + '/switchedTeam').set(true);
-              await state.roomRef.child('leccapieliNotify').set(null);
-              toast('Hai scelto di unirti ai bulli. Buona fortuna!');
-            }
-          },
-          {
-            label: '❌ No, resto con i buoni',
-            style: 'btn-outline',
-            fn: async () => {
-              closeModal();
-              state.leccapiedinChoiceMade = true;
-              await state.roomRef.child('leccapieliNotify').set(null);
-              toast('Hai scelto di restare con i buoni.');
-            }
-          }
-        ]
-      });
-    }, 600);
   },
 
   _showPrivateNightResponse(data) {
