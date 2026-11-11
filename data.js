@@ -8,7 +8,7 @@ const ROLES = {
     name: 'Il Bullo',
     team: 'bulli',
     icon: '😈',
-    desc: 'Di notte scegli con i tuoi complici chi escludere. Vinci quando i bulli raggiungono la parità con i buoni.',
+    desc: 'Di notte scegli una vittima. I bulli si conoscono tra loro. Vinci con i tuoi complici.',
     nightAction: true,
     dayAction: false,
     isAmbiguous: false,
@@ -19,10 +19,10 @@ const ROLES = {
   // ── BUONI ──
   prof_sostegno: {
     id: 'prof_sostegno',
-    name: 'Prof di Sostegno',
+    name: 'La prof di sostegno',
     team: 'buoni',
     icon: '🛡️',
-    desc: 'Ogni notte proteggi un giocatore. Se i bulli lo scelgono, l\'eliminazione fallisce. Non puoi proteggere la stessa persona due notti di fila.',
+    desc: 'Di notte proteggi un giocatore dai bulli. Se lo scelgono come vittima quella notte sopravvive.',
     nightAction: true,
     dayAction: false,
     isAmbiguous: false,
@@ -32,10 +32,10 @@ const ROLES = {
 
   prof_motoria_1: {
     id: 'prof_motoria_1',
-    name: 'Prof di Motoria',
+    name: 'Il prof di motoria',
     team: 'buoni',
     icon: '🏃',
-    desc: 'Sei in coppia con l\'altro Prof di Motoria. Una volta per partita potete attivare i Campionati Studenteschi: quella notte i bulli non possono eliminare nessuno. Se i bulli vi eliminano, morite entrambi.',
+    desc: 'Siete in coppia! Una volta per partita attivate i Campionati: i bulli non eliminano nessuno quella notte.',
     nightAction: true,
     dayAction: false,
     isAmbiguous: false,
@@ -46,10 +46,10 @@ const ROLES = {
 
   prof_motoria_2: {
     id: 'prof_motoria_2',
-    name: 'Prof di Motoria',
+    name: 'La prof di motoria',
     team: 'buoni',
     icon: '🏃',
-    desc: 'Sei in coppia con l\'altro Prof di Motoria. Una volta per partita potete attivare i Campionati Studenteschi: quella notte i bulli non possono eliminare nessuno. Se i bulli vi eliminano, morite entrambi.',
+    desc: 'Siete in coppia! Una volta per partita attivate i Campionati: i bulli non eliminano nessuno quella notte.',
     nightAction: true,
     dayAction: false,
     isAmbiguous: false,
@@ -60,10 +60,10 @@ const ROLES = {
 
   bidello: {
     id: 'bidello',
-    name: 'Bidello del Terzo Piano',
+    name: 'Il Bidello',
     team: 'buoni',
     icon: '🧹',
-    desc: 'Ogni notte scegli un giocatore e chiedi al Preside se si è mosso. Risposta solo Sì o No. Sai che qualcuno ha agito ma non sai in che direzione.',
+    desc: 'Di notte spii un giocatore. Il Preside ti dice se è un bullo o un innocente.',
     nightAction: true,
     dayAction: false,
     isAmbiguous: false,
@@ -76,7 +76,7 @@ const ROLES = {
     name: 'Il Secchione',
     team: 'buoni',
     icon: '📚',
-    desc: 'Una volta per partita puoi bloccare un\'eliminazione diurna che ritieni ingiusta. Devi rivelare pubblicamente il tuo ruolo. Da quel momento tutti sanno chi sei.',
+    desc: 'Di giorno blocchi il voto di un giocatore. Quella discussione non può votare per l\'eliminazione.',
     nightAction: false,
     dayAction: true,
     isAmbiguous: false,
@@ -86,10 +86,10 @@ const ROLES = {
 
   prof_religione: {
     id: 'prof_religione',
-    name: 'Prof di Religione',
+    name: 'Il prof di religione',
     team: 'buoni',
     icon: '✝️',
-    desc: 'Una volta per partita, nella fase mattino subito dopo l\'annuncio del Preside, puoi resuscitare uno dei giocatori eliminati la notte appena trascorsa. Se era un bullo, diventa Bullo Pentito. Vinci con i buoni.',
+    desc: 'Una volta per partita, al mattino dopo l\'annuncio del Preside, puoi resuscitare un giocatore eliminato la notte scorsa. Se era un bullo, diventa Bullo Pentito.',
     nightAction: false,
     dayAction: true,
     isAmbiguous: false,
@@ -99,10 +99,10 @@ const ROLES = {
 
   segretaria: {
     id: 'segretaria',
-    name: 'La Segretaria',
+    name: 'La segretaria scolastica',
     team: 'buoni',
     icon: '📋',
-    desc: 'Ogni notte consulti il registro e scopri il ruolo esatto di un giocatore a tua scelta. Sei l\'investigatrice principale.',
+    desc: 'Di notte indaghi su un giocatore. Il Preside ti rivela la sua fazione.',
     nightAction: true,
     dayAction: false,
     isAmbiguous: false,
@@ -112,10 +112,10 @@ const ROLES = {
 
   rappresentante_classe: {
     id: 'rappresentante_classe',
-    name: 'Rappresentante di Classe',
+    name: 'Il rappresentante dei genitori',
     team: 'buoni',
     icon: '🗳️',
-    desc: 'Una volta per partita convochi un voto segreto saltando la discussione pubblica. In quel voto il tuo voto conta doppio.',
+    desc: 'Di giorno puoi richiedere una votazione segreta. Il risultato viene comunicato solo al Preside.',
     nightAction: false,
     dayAction: true,
     isAmbiguous: false,
@@ -125,10 +125,10 @@ const ROLES = {
 
   rappresentante_libri: {
     id: 'rappresentante_libri',
-    name: 'Rappresentante dei Libri',
+    name: 'Il rappresentante dei libri',
     team: 'buoni',
     icon: '📖',
-    desc: 'Dopo ogni eliminazione diurna puoi consultare il fascicolo dell\'eliminato e scoprire se era un bullo o no. Solo tu lo sai.',
+    desc: 'Dopo ogni eliminazione diurna puoi scoprire se il giocatore eliminato era un bullo o un innocente.',
     nightAction: false,
     dayAction: true,
     isAmbiguous: false,
@@ -141,7 +141,7 @@ const ROLES = {
     name: 'Il Coordinatore',
     team: 'buoni',
     icon: '📁',
-    desc: 'Una volta per partita convochi un Consiglio di Classe Straordinario. Scegli due giocatori: il voto di quel turno riguarda solo loro due.',
+    desc: 'Una volta per partita puoi convocare un Consiglio Straordinario: si tiene un secondo voto di eliminazione.',
     nightAction: false,
     dayAction: true,
     isAmbiguous: false,
@@ -151,10 +151,10 @@ const ROLES = {
 
   prof_chimica: {
     id: 'prof_chimica',
-    name: 'Prof di Chimica',
+    name: 'La prof di chimica',
     team: 'buoni',
     icon: '🧪',
-    desc: 'Una volta per partita prepari un intruglio per un giocatore. Se è un bullo muore. Se è innocente muore l\'innocente. Se i bulli ti eliminano quella stessa notte, morite entrambi.',
+    desc: 'Una volta per partita consegni un intruglio. Se il bersaglio è un bullo muore lui. Se è innocente muori tu.',
     nightAction: true,
     dayAction: false,
     isAmbiguous: false,
@@ -164,10 +164,10 @@ const ROLES = {
 
   prof_robotica: {
     id: 'prof_robotica',
-    name: 'Prof di Robotica',
+    name: 'Il prof di robotica',
     team: 'buoni',
     icon: '🤖',
-    desc: 'Se vieni eliminato di notte, i bulli sabotano il sistema di voto e la votazione diurna di quel giorno viene annullata. Eccezione: il Consiglio di Classe Straordinario rimane valido.',
+    desc: 'Se vieni eliminato di notte, i bulli sabotano il voto: la votazione diurna di quel giorno viene annullata.',
     nightAction: false,
     dayAction: false,
     isAmbiguous: false,
@@ -182,7 +182,7 @@ const ROLES = {
     name: 'Il Furbetto',
     team: 'solo',
     icon: '🦊',
-    desc: 'Nessun potere speciale. Il tuo unico obiettivo: sopravvivere a tutti. Vinci da solo indipendentemente da chi vince.',
+    desc: 'Vinci da solo! Se sei l\'unico sopravvissuto a fine partita hai vinto tu.',
     nightAction: false,
     dayAction: false,
     isAmbiguous: true,
@@ -195,7 +195,7 @@ const ROLES = {
     name: 'Il Fifone',
     team: 'buoni',
     icon: '😰',
-    desc: 'Non hai poteri speciali. Il tuo voto segue automaticamente la maggioranza — non puoi votare controcorrente anche se volessi.',
+    desc: 'Voti sempre come la maggioranza. Non puoi scegliere liberamente chi eliminare.',
     nightAction: false,
     dayAction: false,
     isAmbiguous: true,
@@ -206,10 +206,10 @@ const ROLES = {
 
   omertoso: {
     id: 'omertoso',
-    name: 'L\'Omertoso',
+    name: 'L\'omertosa',
     team: 'bulli',
     icon: '🤐',
-    desc: 'Conosci i bulli ma non puoi rivelarli — il tasto accusa è disabilitato. Puoi scegliere di non votare. Vinci con i bulli.',
+    desc: 'Conosci i bulli ma non puoi rivelarli. Perdi se tutti i bulli vengono eliminati.',
     nightAction: false,
     dayAction: false,
     isAmbiguous: true,
@@ -236,7 +236,7 @@ const ROLES = {
     name: 'Il Bullo Pentito',
     team: 'buoni',
     icon: '😔',
-    desc: 'Conosci i bulli ma giochi con i buoni. Non puoi votare con loro di notte. Non puoi mai rivelare i loro nomi: se lo fai la partita finisce con la vittoria dei bulli.',
+    desc: 'Eri un bullo ma vuoi redimirti. Vinci con i buoni se sopravvivi fino alla fine.',
     nightAction: false,
     dayAction: false,
     isAmbiguous: true,
@@ -249,10 +249,10 @@ const ROLES = {
   // ── ALUNNI GENERICI ──
   primo_banco: {
     id: 'primo_banco',
-    name: 'Quello del Primo Banco',
+    name: 'Il primo della classe',
     team: 'buoni',
     icon: '🤓',
-    desc: 'Nessun potere speciale. Vinci con i buoni.',
+    desc: 'Sei un semplice studente esemplare. Nessun potere speciale ma il tuo voto vale quanto quello di tutti.',
     nightAction: false,
     dayAction: false,
     isAmbiguous: false,
@@ -262,10 +262,10 @@ const ROLES = {
   },
   pettina: {
     id: 'pettina',
-    name: 'Quella che si Pettina',
+    name: 'Quella che si pettina',
     team: 'buoni',
     icon: '💁',
-    desc: 'Nessun potere speciale. Vinci con i buoni.',
+    desc: 'Sei una semplice studentessa. Nessun potere speciale ma il tuo voto conta.',
     nightAction: false,
     dayAction: false,
     isAmbiguous: false,
@@ -275,10 +275,10 @@ const ROLES = {
   },
   ultimo_banco: {
     id: 'ultimo_banco',
-    name: 'Quello dell\'Ultimo Banco',
+    name: 'Lo scaldasedia',
     team: 'buoni',
     icon: '😴',
-    desc: 'Nessun potere speciale. Vinci con i buoni.',
+    desc: 'Siedi in fondo e osservi tutto. Nessun potere speciale ma il tuo voto conta.',
     nightAction: false,
     dayAction: false,
     isAmbiguous: false,
@@ -288,10 +288,10 @@ const ROLES = {
   },
   dorme: {
     id: 'dorme',
-    name: 'Quello che Dorme Sempre',
+    name: 'Il dormiglione',
     team: 'buoni',
     icon: '💤',
-    desc: 'Nessun potere speciale. Vinci con i buoni.',
+    desc: 'Dormi in classe ma sei dalla parte dei buoni. Nessun potere speciale.',
     nightAction: false,
     dayAction: false,
     isAmbiguous: false,
@@ -301,10 +301,10 @@ const ROLES = {
   },
   mangia: {
     id: 'mangia',
-    name: 'Quella che Mangia di Nascosto',
+    name: 'La mangiona',
     team: 'buoni',
     icon: '🍕',
-    desc: 'Nessun potere speciale. Vinci con i buoni.',
+    desc: 'Mangi di nascosto in classe. Nessun potere speciale ma il tuo voto conta.',
     nightAction: false,
     dayAction: false,
     isAmbiguous: false,
@@ -314,10 +314,10 @@ const ROLES = {
   },
   nota: {
     id: 'nota',
-    name: 'Collezionista di Note',
+    name: 'Il collezionista',
     team: 'buoni',
     icon: '✋',
-    desc: 'Nessun potere speciale. Vinci con i buoni.',
+    desc: 'Colleziona note disciplinari. Sei nei guai ma questa volta puoi riscattarti. Vinci con i buoni.',
     nightAction: false,
     dayAction: false,
     isAmbiguous: false,
@@ -374,13 +374,13 @@ function generateRoles(n) {
 
   // Prof motoria: add as pair or not at all
   const poolWithoutMotoria = ROLE_POOL.filter(r => r !== 'prof_motoria_1');
-  
+
   // How many more roles do we need?
   const slotsLeft = () => n - roles.length;
 
   // Shuffle pool and pick roles to fill slots
   const shuffled = [...poolWithoutMotoria].sort(() => Math.random() - 0.5);
-  
+
   for (const role of shuffled) {
     if (slotsLeft() <= 0) break;
     // Prof motoria needs 2 slots
