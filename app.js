@@ -439,6 +439,20 @@ const App = {
     const card = document.getElementById('role-card');
     card.className = 'role-card team-' + (role.isAmbiguous ? 'ambiguo' : role.team);
 
+    // Mostra immagine carta fisica
+    const imgWrap = document.getElementById('role-card-img-wrap');
+    const imgEl   = document.getElementById('role-card-img');
+    const fallback = document.getElementById('role-fallback');
+    if (imgWrap && imgEl && fallback) {
+      imgEl.src = 'cards/' + role.id + '.png';
+      imgWrap.style.display = '';
+      fallback.style.display = 'none';
+      // Se l'immagine non carica, mostra il fallback emoji
+      imgEl.onerror = () => {
+        imgWrap.style.display = 'none';
+        fallback.style.display = '';
+      };
+    }
     document.getElementById('role-icon').textContent = role.icon;
     document.getElementById('role-name').textContent = role.name;
     document.getElementById('role-desc').textContent = role.desc;

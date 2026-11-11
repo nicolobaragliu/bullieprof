@@ -137,10 +137,19 @@
   </div>
   <div class="role-reveal-screen">
     <div class="role-card" id="role-card">
-      <div class="role-icon" id="role-icon">🎭</div>
-      <div class="role-name" id="role-name">—</div>
+      <!-- Immagine carta fisica (priorità) -->
+      <div id="role-card-img-wrap" style="display:none;text-align:center;padding:8px 0 4px">
+        <img id="role-card-img" src="" alt=""
+          style="max-width:260px;max-height:52vh;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.5)"
+          onerror="document.getElementById('role-card-img-wrap').style.display='none';document.getElementById('role-fallback').style.display=''">
+      </div>
+      <!-- Fallback emoji + nome + desc (se nessuna immagine) -->
+      <div id="role-fallback">
+        <div class="role-icon" id="role-icon">🎭</div>
+        <div class="role-name" id="role-name">—</div>
+        <div class="role-desc" id="role-desc">—</div>
+      </div>
       <div class="role-team-badge" id="role-team-badge">—</div>
-      <div class="role-desc" id="role-desc">—</div>
       <div class="role-allies" id="role-allies" style="display:none">
         <div class="role-allies-label">I TUOI COMPLICI</div>
         <div class="role-allies-list" id="role-allies-list">—</div>
