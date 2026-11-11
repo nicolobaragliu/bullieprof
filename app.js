@@ -741,19 +741,19 @@ const App = {
     } else if (role.id === 'segretaria') {
       html = `<div class="night-action-card">
         <div class="night-action-title">📋 Consulta il registro</div>
-        <div class="night-action-desc">Scegli un giocatore di cui scoprire il ruolo.</div>
+        <div class="night-action-desc">Scegli un giocatore. Il Preside ti rivelerà la sua fazione (bullo o innocente).</div>
         <div class="player-select-grid">${playerBtns}</div>
       </div>`;
     } else if (role.id === 'bidello') {
       html = `<div class="night-action-card">
-        <div class="night-action-title">🧹 Chi origliare?</div>
-        <div class="night-action-desc">Scegli un giocatore. Il Preside ti dirà se si è mosso stanotte (Sì/No).</div>
+        <div class="night-action-title">🧹 Chi spiare?</div>
+        <div class="night-action-desc">Scegli un giocatore. Il Preside ti dirà se è un bullo o un innocente.</div>
         <div class="player-select-grid">${playerBtns}</div>
       </div>`;
     } else if (role.id === 'prof_chimica' && !state.abilityUsed) {
       html = `<div class="night-action-card">
         <div class="night-action-title">🧪 Consegna l'intruglio</div>
-        <div class="night-action-desc">⚠️ Attenzione! Se la persona è innocente, morirà lei. Usa con saggezza. Una sola volta.</div>
+        <div class="night-action-desc">⚠️ Attenzione! Se la persona è innocente, morirai tu. Usa con saggezza. Una sola volta.</div>
         <div class="player-select-grid">${playerBtns}</div>
         <button class="btn btn-outline btn-full btn-sm" style="margin-top:8px" onclick="App.skipNightAction()">Passa questa notte</button>
       </div>`;
@@ -896,11 +896,14 @@ const App = {
           bulloTarget = null; // già gestito, non eliminare di nuovo
         }
       } else {
-        // Innocent dies
-        players[target].alive = false;
-        addEliminated(target);
-        events.push({ text: `🧪 L'intruglio ha colpito ${target} che era innocente!`, type: 'bad' });
-        announcements.push({ text: `L'intruglio ha colpito la persona sbagliata…`, type: 'bad' });
+        // Prof dies (not the innocent — she took the wrong risk)
+        const profName = chimicaAction.actor;
+        if (players[profName]?.alive) {
+          players[profName].alive = false;
+          addEliminated(profName);
+        }
+        events.push({ text: `🧪 L'intruglio ha colpito un innocente — la Prof di Chimica è morta per il suo errore!`, type: 'bad' });
+        announcements.push({ text: `L'intruglio ha avuto effetto su chi lo ha preparato…`, type: 'bad' });
       }
     }
 
@@ -948,15 +951,17 @@ const App = {
     // Bidello response
     const bidelloAction = actions['__bidello'];
     if (bidelloAction?.target) {
-      const targetActed = Object.values(actions).some(a => a.target === bidelloAction.target && a.actor !== bidelloAction.actor);
-      await state.roomRef.child('bidelloResponse').set({ target: bidelloAction.target, acted: targetActed });
+      const bTargetRole = players[bidelloAction.target]?.role;
+      const bIsBullo = ROLES[bTargetRole]?.team === 'bulli' || bTargetRole === 'omertoso';
+      await state.roomRef.child('bidelloResponse').set({ target: bidelloAction.target, isBullo: bIsBullo });
     }
 
     // Segretaria response
     const segretariaAction = actions['__segretaria'];
     if (segretariaAction?.target) {
-      const targetRole = players[segretariaAction.target]?.role;
-      await state.roomRef.child('segretariaResponse').set({ target: segretariaAction.target, role: targetRole });
+      const sTargetRole = players[segretariaAction.target]?.role;
+      const sIsBullo = ROLES[sTargetRole]?.team === 'bulli' || sTargetRole === 'omertoso';
+      await state.roomRef.child('segretariaResponse').set({ target: segretariaAction.target, isBullo: sIsBullo });
     }
 
     // Check win condition
@@ -1020,12 +1025,11 @@ const App = {
       }
     }
 
-    // Show secchione block notification to preside
-    const voteControls = document.getElementById('vote-controls');
-    if (data.secchioneBlocked && data.secchioneWho) {
+    // Show secchione blocked voter notification to preside
+    if (data.secchioneBlockedVoter) {
       const banner = document.createElement('div');
-      banner.style.cssText = 'background:#fee2e2;border:1.5px solid #ef4444;border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:14px;color:#b91c1c;';
-      banner.innerHTML = '📚 <strong>' + data.secchioneWho + ' (Il Secchione)</strong> ha bloccato l\'eliminazione! Il prossimo voto è annullato.';
+      banner.style.cssText = 'background:#fef9c3;border:1.5px solid #eab308;border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:14px;color:#713f12;';
+      banner.innerHTML = '📚 <strong>Secchione:</strong> il voto di <strong>' + data.secchioneBlockedVoter + '</strong> è bloccato e non sarà conteggiato.';
       const votePanelEl = document.getElementById('vote-panel');
       if (votePanelEl && !votePanelEl.querySelector('.secchione-banner')) {
         banner.className = 'secchione-banner';
@@ -1038,10 +1042,9 @@ const App = {
     const voteMode = data.voteMode || 'normal';
     if (voteDesc) {
       if (voteMode === 'consiglio') {
-        const c = data.consiglio || [];
-        voteDesc.textContent = `📁 Consiglio Straordinario: voto solo su ${c.join(' e ')}`;
+        voteDesc.textContent = '🏛️ Consiglio Straordinario — secondo voto di eliminazione';
       } else if (voteMode === 'secret') {
-        voteDesc.textContent = '🗳️ Voto segreto (Rappresentante di Classe)';
+        voteDesc.textContent = '🗳️ Voto segreto — risultato solo al Preside';
       } else {
         voteDesc.textContent = 'Discussione pubblica — chi vuoi eliminare?';
       }
@@ -1086,20 +1089,20 @@ const App = {
           const isFifone = role.id === 'fifone';
           if (!isFifone) {
             const leccapiedeInfo = '';
-            // In modalità consiglio, mostra solo i 2 candidati
             const voteMode = data.voteMode || 'normal';
-            const consiglioCandidates = data.consiglio || [];
-            const votablePlayers = voteMode === 'consiglio' && consiglioCandidates.length > 0
-              ? alivePlayers.filter(p => consiglioCandidates.includes(p.name))
-              : alivePlayers;
+            const isBlocked = data.secchioneBlockedVoter === state.myName;
+            if (isBlocked) {
+              html += `<div style="text-align:center;padding:1rem;background:rgba(234,179,8,0.15);border-radius:8px;margin-bottom:8px;font-size:14px;color:var(--text-light)">📚 Il tuo voto è stato bloccato dal Secchione.</div>`;
+            } else {
             html += `<div class="night-action-card" style="margin-bottom:8px">
               <div class="night-action-title">🗳️ Il tuo voto</div>
-              <div class="night-action-desc">${voteMode === 'consiglio' ? '📁 Consiglio Straordinario — scegli tra i candidati' : 'Chi vuoi eliminare?'}</div>
+              <div class="night-action-desc">${voteMode === 'consiglio' ? '🏛️ Consiglio Straordinario — secondo voto di eliminazione' : 'Chi vuoi eliminare?'}</div>
               ${leccapiedeInfo}
-              <div class="player-select-grid">${votablePlayers.map(p =>
+              <div class="player-select-grid">${alivePlayers.map(p =>
                 `<button class="player-select-btn" onclick="App.castVote('${p.name}')">${p.name}</button>`
               ).join('')}</div>
             </div>`;
+            }
           } else {
             html += `<div style="text-align:center;padding:1rem;font-style:italic;color:rgba(255,255,255,0.5)">Il tuo voto seguirà automaticamente la maggioranza…</div>`;
           }
@@ -1112,7 +1115,7 @@ const App = {
 
       // Special day abilities
       if (role.id === 'secchione' && !state.abilityUsed) {
-        html += `<button class="btn btn-danger btn-full btn-sm" style="margin-top:8px" onclick="App.useSecchioneAbility()">📚 Blocca l'eliminazione (rivela il tuo ruolo)</button>`;
+        html += `<button class="btn btn-danger btn-full btn-sm" style="margin-top:8px" onclick="App.useSecchioneAbility()">📚 Blocca il voto di un giocatore</button>`;
       }
       if (role.id === 'rappresentante_classe' && !state.abilityUsed) {
         html += `<button class="btn btn-primary btn-full btn-sm" style="margin-top:8px" onclick="App.useVotoSegreto()">🗳️ Convoca voto segreto</button>`;
@@ -1144,13 +1147,25 @@ const App = {
 
   // Day abilities
   async useSecchioneAbility() {
-    state.abilityUsed = true;
-    await state.roomRef.update({ secchioneBlocked: true, secchioneWho: state.myName });
-    await state.roomRef.child('events/' + Date.now()).set({
-      text: '📚 ' + state.myName + ' (Secchione) ha bloccato l\'eliminazione rivelando il suo ruolo!',
-      type: 'info'
+    const data = state.roomData;
+    const alive = Object.values(data?.players || {}).filter(p => p.alive && p.name !== state.myName && p.role !== 'preside');
+    showModal({
+      title: '📚 Chi vuoi bloccare?',
+      desc: 'Scegli un giocatore: il suo voto non verrà conteggiato oggi.',
+      actions: alive.map(p => ({
+        label: p.name, style: 'btn-outline',
+        fn: async () => {
+          closeModal();
+          state.abilityUsed = true;
+          await state.roomRef.update({ secchioneBlockedVoter: p.name });
+          await state.roomRef.child('events/' + Date.now()).set({
+            text: '📚 Il Secchione ha bloccato il voto di qualcuno!',
+            type: 'info'
+          });
+          toast('Hai bloccato il voto di ' + p.name + '!');
+        }
+      }))
     });
-    toast('Hai bloccato l\'eliminazione! Il tuo ruolo è ora noto a tutti.');
   },
 
   async useVotoSegreto() {
@@ -1227,11 +1242,9 @@ const App = {
     const counts = {};
     Object.entries(votes).forEach(([voter, target]) => {
       if (!target) return;
-      // For consiglio: only count votes for the two candidates
-      if (voteMode === 'consiglio' && consiglio.length > 0 && !consiglio.includes(target)) return;
-      // Double vote for rappresentante in secret vote
-      const weight = (rappresentante && voter === rappresentante.name && voteMode === 'secret') ? 2 : 1;
-      counts[target] = (counts[target] || 0) + weight;
+      // Skip blocked voter (secchione ability)
+      if (data.secchioneBlockedVoter && voter === data.secchioneBlockedVoter) return;
+      counts[target] = (counts[target] || 0) + 1;
     });
 
     const total = Object.values(counts).reduce((a,b)=>a+b,0) || 1;
@@ -1353,20 +1366,6 @@ const App = {
     const eliminated = [...(data.eliminated || [])];
     const events = [...(data.events || [])];
 
-    if (data.secchioneBlocked) {
-      toast('Il Secchione ha bloccato questa eliminazione!');
-      // Skip to night - increment turn so nightActionDone resets
-      await state.roomRef.update({
-        secchioneBlocked: false, secchioneWho: null,
-        votes: {}, nightActions: {}, playersDone: {},
-        voteMode: 'normal', consiglio: null,
-        rappresentante_used: false, coordinatore_used: false,
-        status: 'night',
-        turn: (data.turn || 1) + 1,
-      });
-      return;
-    }
-
     players[name].alive = false;
     eliminated.push({ name, role: players[name].role });
     events.push({ text: `🚫 ${name} è stato/a eliminato/a dalla classe.`, type: 'bad' });
@@ -1375,7 +1374,7 @@ const App = {
 
     await state.roomRef.update({
       players, eliminated, events,
-      votes: {}, libriChecked: false, secchioneBlocked: false,
+      votes: {}, libriChecked: false, secchioneBlockedVoter: null,
       consiglio: null, voteMode: 'normal',
       rappresentante_used: false, coordinatore_used: false, secchione_used: false,
       status: winResult ? 'ended' : 'night',
@@ -1390,7 +1389,7 @@ const App = {
     const players = data.players || {};
     const winResult = App._checkWinCondition(players, data.bullNames || []);
     await state.roomRef.update({
-      votes: {}, secchioneBlocked: false, secchioneWho: null, consiglio: null, voteMode: 'normal',
+      votes: {}, secchioneBlockedVoter: null, consiglio: null, voteMode: 'normal',
       rappresentante_used: false, coordinatore_used: false, secchione_used: false,
       roboticaBlocked: false, playersDone: {},
       bidelloResponse: null, segretariaResponse: null,
@@ -1530,38 +1529,19 @@ const App = {
     });
   },
 
-  useConsiglio() {
-    const data = state.roomData;
-    const alive = Object.values(data?.players||{}).filter(p => p.alive && p.name !== state.myName && p.role !== 'preside');
-    showModal({
-      title: '📁 Consiglio Straordinario — primo imputato:',
-      desc: 'Annulla qualsiasi altro voto. Scegli due imputati.',
-      actions: alive.map(p => ({
-        label: p.name, style: 'btn-outline',
-        fn: () => {
-          closeModal();
-          const rest = alive.filter(x => x.name !== p.name);
-          showModal({
-            title: 'Secondo imputato:',
-            desc: 'Il voto riguarderà solo questi due.',
-            actions: rest.map(p2 => ({
-              label: p2.name, style: 'btn-outline',
-              fn: async () => {
-                closeModal();
-                state.abilityUsed = true;
-                await state.roomRef.update({
-                  voteMode: 'consiglio',
-                  consiglio: [p.name, p2.name],
-                  coordinatore_used: true,
-                  votes: {}
-                });
-                toast('📁 Consiglio convocato! Voto solo su ' + p.name + ' e ' + p2.name + '.');
-              }
-            }))
-          });
-        }
-      }))
+  async useConsiglio() {
+    state.abilityUsed = true;
+    await state.roomRef.update({
+      voteMode: 'consiglio',
+      consiglio: null,
+      coordinatore_used: true,
+      votes: {}
     });
+    await state.roomRef.child('events/' + Date.now()).set({
+      text: '🏛️ Consiglio Straordinario convocato! Si tiene un secondo voto di eliminazione.',
+      type: 'info'
+    });
+    toast('🏛️ Consiglio Straordinario convocato!');
   },
 
   async activateCampionati() {
@@ -1633,12 +1613,13 @@ const App = {
       const resp = data.bidelloResponse;
       state._bidelloResponseShown = true;
       setTimeout(() => {
+        const isBullo = resp.isBullo;
         showModal({
           title: '🧹 Risposta del Preside',
-          desc: resp.acted
-            ? resp.target + ' si è mosso/a stanotte. Ha usato un potere o è stato coinvolto in qualcosa.'
-            : resp.target + ' non si è mosso/a stanotte. Nessuna azione rilevata.',
-          actions: [{ label: resp.acted ? '✅ Si, si è mosso/a' : '❌ No, non si è mosso/a', style: resp.acted ? 'btn-green' : 'btn-outline', fn: closeModal }]
+          desc: isBullo
+            ? '👎 ' + resp.target + ' è un BULLO (o dalla parte dei bulli).'
+            : '👍 ' + resp.target + ' è INNOCENTE.',
+          actions: [{ label: isBullo ? '😱 Capito!' : '✅ Capito', style: isBullo ? 'btn-red' : 'btn-green', fn: closeModal }]
         });
       }, 500);
     }
@@ -1647,12 +1628,13 @@ const App = {
     if (role === 'segretaria' && data.segretariaResponse && !state._segretariaResponseShown) {
       const resp = data.segretariaResponse;
       state._segretariaResponseShown = true;
-      const roleObj = ROLES[resp.role];
-      const isBullo = roleObj?.team === 'bulli' || resp.role === 'omertoso';
       setTimeout(() => {
+        const isBullo = resp.isBullo;
         showModal({
           title: '📋 Registro scolastico',
-          desc: resp.target + ' è: ' + (roleObj?.name || resp.role) + (isBullo ? ' — ATTENZIONE: è dalla parte dei bulli!' : ' — è innocente.'),
+          desc: isBullo
+            ? '👎 ' + resp.target + ' è un BULLO (o dalla parte dei bulli).'
+            : '👍 ' + resp.target + ' è INNOCENTE.',
           actions: [{ label: isBullo ? '😱 Capito!' : '✅ Capito', style: isBullo ? 'btn-red' : 'btn-green', fn: closeModal }]
         });
       }, 500);
