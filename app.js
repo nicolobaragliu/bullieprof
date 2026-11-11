@@ -45,8 +45,6 @@ const state = {
   roomData: null,
   abilityUsed: false,
   nightActionDone: false,
-  leccapiedinChoiceMade: false,
-  leccapedeSwitch: false,
 };
 
 // ─── FIREBASE ──────────────────────────────────────────────────────────────────
@@ -422,11 +420,6 @@ const App = {
 
     if (status === 'ended') {
       App._showWin(data);
-    }
-
-    // Leccapiedi: mostra modal scelta quando rimane 1 bullo
-    if (!state.isHost && data.leccapieliNotify === state.myName && !state.leccapiedinChoiceMade) {
-      App._showLeccapiedeModal(data);
     }
 
     // Segretaria: se è stata resuscitata, resetta il flag risposta
@@ -836,9 +829,12 @@ const App = {
     const events = [...(data.events || [])];
     const eliminated = [...(data.eliminated || [])];
     let announcements = [];
+    const lastNightEliminated = [];
     const addEliminated = (name) => {
       if (name && !eliminated.find(e => e.name === name)) {
-        eliminated.push({ name, role: players[name]?.role });
+        const entry = { name, role: players[name]?.role };
+        eliminated.push(entry);
+        lastNightEliminated.push(entry);
       }
     };
 
@@ -962,6 +958,7 @@ const App = {
       status: winResult ? 'ended' : 'day',
       winner: winResult || null,
       roboticaBlocked: !!(bulloTarget && players[bulloTarget]?.role === 'prof_robotica'),
+      lastNightEliminated,
     });
 
     } catch(e) { console.error('endNight error:', e); toast('Errore: ' + e.message); }
@@ -1070,25 +1067,11 @@ const App = {
       const myVote = data.votes?.[state.myName];
       const roboticaBlocked = data.roboticaBlocked;
       const myPlayerData = data.players?.[state.myName];
-      const isLeccapiedeSwitch = role.id === 'leccapiedi' && (myPlayerData?.switchedTeam || state.leccapedeSwitch);
       if (!roboticaBlocked) {
         if (!myVote) {
           const isFifone = role.id === 'fifone';
           if (!isFifone) {
-            // Leccapiede convertito: mostra i voti degli alleati bulli come fanno i bulli stessi
-            let leccapiedeInfo = '';
-            if (isLeccapiedeSwitch) {
-              const votes = data.votes || {};
-              const bulli = Object.values(data.players || {}).filter(p => p.role === 'bullo' && p.alive);
-              if (bulli.length > 0) {
-                leccapiedeInfo = '<div style="background:rgba(239,68,68,0.1);border-radius:8px;padding:8px 10px;margin-bottom:10px">' +
-                  '<div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:4px;font-family:\"Cinzel\",serif;letter-spacing:0.5px">VOTI DEI BULLI</div>' +
-                  bulli.map(b => {
-                    const v = votes[b.name];
-                    return '<div style="font-size:12px;padding:2px 0">' + b.name + ': ' + (v ? '<strong>' + v + '</strong>' : '⏳') + '</div>';
-                  }).join('') + '</div>';
-              }
-            }
+            const leccapiedeInfo = '';
             // In modalità consiglio, mostra solo i 2 candidati
             const voteMode = data.voteMode || 'normal';
             const consiglioCandidates = data.consiglio || [];
@@ -1123,8 +1106,8 @@ const App = {
       if (role.id === 'coordinatore' && !state.abilityUsed) {
         html += `<button class="btn btn-primary btn-full btn-sm" style="margin-top:8px" onclick="App.useConsiglio()">📁 Consiglio di Classe Straordinario</button>`;
       }
-      if (role.id === 'prof_religione' && !state.abilityUsed && !data.religione_used && (data.eliminated?.length > 0)) {
-        html += `<button class="btn btn-green btn-full btn-sm" style="margin-top:8px" onclick="App.useRevive()">✝️ Salva un eliminato</button>`;
+      if (role.id === 'prof_religione' && !state.abilityUsed && !data.religione_used && (data.lastNightEliminated?.length > 0)) {
+        html += `<button class="btn btn-green btn-full btn-sm" style="margin-top:8px" onclick="App.useRevive()">✝️ Salva un eliminato della notte</button>`;
       }
       if (role.id === 'rappresentante_libri') {
         const lastElim = data.eliminated?.[data.eliminated.length - 1];
@@ -1165,27 +1148,29 @@ const App = {
 
 
   useRevive() {
+    // Funzione legacy — override dall'async useRevive sotto
     const data = state.roomData;
-    const eliminated = data?.eliminated || [];
-    if (!eliminated.length) { toast('Nessuno da salvare'); return; }
+    const candidates = data?.lastNightEliminated || [];
+    if (!candidates.length) { toast('Nessuno da salvare questa mattina'); return; }
     showModal({
-      title: '✝️ Chi vuoi salvare?',
-      desc: 'Scegli un giocatore eliminato da riportare in vita.',
-      actions: eliminated.map(e => ({
+      title: '✝️ Chi vuoi resuscitare?',
+      desc: 'Puoi salvare un giocatore eliminato la notte scorsa.',
+      actions: candidates.map(e => ({
         label: e.name, style: 'btn-green',
         fn: async () => {
           closeModal();
           state.abilityUsed = true;
           const playerRole = ROLES[e.role];
           const isBullo = playerRole?.team === 'bulli' || e.role === 'omertoso';
+          const eliminated = data?.eliminated || [];
           const newEliminated = eliminated.filter(x => x.name !== e.name);
           await state.roomRef.child('players/' + e.name + '/alive').set(true);
           await state.roomRef.child('religione_used').set(true);
           await state.roomRef.child('eliminated').set(newEliminated);
+          await state.roomRef.child('lastNightEliminated').set([]);
           if (isBullo) {
-            await state.roomRef.child('players/' + e.name + '/role').set('buono_convertito');
+            await state.roomRef.child('players/' + e.name + '/role').set('bullo_pentito');
           }
-          // Reset votes so the newly-alive player can participate cleanly
           const currentVotes = data.votes || {};
           const cleanedVotes = {};
           Object.entries(currentVotes).forEach(([voter, target]) => {
@@ -1320,11 +1305,11 @@ const App = {
     const body = document.getElementById('rules-body');
     if (!body) return;
     const sections = [
-      { title: 'Obiettivo', text: 'I buoni devono scoprire ed eliminare tutti i bulli. I bulli devono raggiungere la parità numerica con i buoni. Il Furbetto vince da solo se sopravvive a tutti.' },
+      { title: 'Obiettivo', text: 'I buoni devono scoprire ed eliminare tutti i bulli. I bulli (più l\'Omertoso) vincono quando il loro numero eguaglia o supera quello degli altri giocatori. Il Furbetto vince da solo se sopravvive all\'uscita dell\'ultimo bullo.' },
       { title: 'Struttura del turno', text: 'Ogni turno ha una fase notturna (azioni segrete) e una fase diurna (discussione e votazione).' },
       { title: 'Fase notturna', text: 'Il Preside avvia la notte. I bulli scelgono una vittima. I ruoli speciali usano le loro abilità tramite app. Nessuno parla.' },
       { title: 'Fase diurna', text: 'Il Preside annuncia gli eventi della notte. Si discute e si vota chi eliminare. Il Preside gestisce il voto.' },
-      { title: 'Fine partita', text: 'I buoni vincono se eliminano tutti i bulli. I bulli vincono se raggiungono la parità. Il Furbetto vince da solo.' },
+      { title: 'Fine partita', text: 'I buoni vincono se eliminano tutti i bulli. I bulli vincono quando pareggiano gli altri giocatori (Leccapiedi vince con loro). Il Furbetto vince se all\'uscita dell\'ultimo bullo rimane un solo buono.' },
     ];
     body.innerHTML = sections.map(s => `
       <div style="background:white;border:1.5px solid var(--border);border-radius:var(--r-md);padding:12px 14px;margin-bottom:8px">
@@ -1372,11 +1357,6 @@ const App = {
     eliminated.push({ name, role: players[name].role });
     events.push({ text: `🚫 ${name} è stato/a eliminato/a dalla classe.`, type: 'bad' });
 
-    // Check leccapiedi - 1 bullo remaining after elimination
-    const aliveBulli = Object.values(players).filter(p => p.alive && p.role === 'bullo');
-    const leccapiedi = Object.values(players).find(p => p.role === 'leccapiedi' && p.alive && !p.switchedTeam);
-    const leccapieliNotify = aliveBulli.length === 1 && leccapiedi ? leccapiedi.name : null;
-
     const winResult = App._checkWinCondition(players, data.bullNames || []);
 
     await state.roomRef.update({
@@ -1388,7 +1368,6 @@ const App = {
       winner: winResult || null,
       turn: (data.turn || 1) + 1,
       nightActions: {},
-      leccapieliNotify,
     });
   },
 
@@ -1419,28 +1398,25 @@ const App = {
     const alive = Object.values(players).filter(p => p.alive && p.role !== 'preside');
     const aliveBulli = alive.filter(p => p.role === 'bullo');
     const aliveOmertoso = alive.filter(p => p.role === 'omertoso');
-    const aliveLeccapiedi = alive.find(p => p.role === 'leccapiedi' && p.switchedTeam);
     const aliveFurbetto = alive.find(p => p.role === 'furbetto');
 
-    // Omertoso e Leccapiedi contano come evil solo se ci sono ancora bulli vivi
-    // (se tutti i bulli muoiono, perdono con loro)
+    // Omertoso conta come evil solo se ci sono bulli vivi
+    // Leccapiedi vince con i bulli ma non conta ai loro fini numerici
     const bullAlive = aliveBulli.length > 0;
-    const leccaConta = aliveLeccapiedi && bullAlive;
     const omertosoConta = bullAlive ? aliveOmertoso.length : 0;
-    const evilCount = aliveBulli.length + omertosoConta + (leccaConta ? 1 : 0);
+    const evilCount = aliveBulli.length + omertosoConta;
     const goodCount = alive.filter(p => {
       if (p.role === 'bullo') return false;          // evil
       if (p.role === 'omertoso') return false;        // evil
-      if (p.role === 'bullo_pentito') return false;   // neutral (doesn't count for either)
+      if (p.role === 'bullo_pentito') return false;   // neutral (non conta per nessuno)
       if (p.role === 'furbetto') return false;        // solo
-      if (p.role === 'leccapiedi' && p.switchedTeam) return false; // switched to evil
-      return true;
+      return true;  // tutti gli altri, incluso leccapiedi
     }).length;
 
     // Furbetto: vince se i bulli sono tutti morti e rimane con ≤1 buono
     const aliveNonFurbetto = alive.filter(p => p.role !== 'furbetto');
     if (aliveFurbetto && aliveNonFurbetto.length === 0) return 'furbetto';
-    if (aliveFurbetto && aliveBulli.length === 0 && aliveOmertoso.length === 0 && !aliveLeccapiedi && goodCount <= 1) return 'furbetto';
+    if (aliveFurbetto && aliveBulli.length === 0 && aliveOmertoso.length === 0 && goodCount <= 1) return 'furbetto';
     if (evilCount === 0 && !aliveFurbetto) return 'buoni';
     if (evilCount === 0 && aliveFurbetto && goodCount > 1) return null; // partita continua
     // I bulli vincono se il fronte evil (bulli + omertoso + leccapiedi convertito)
@@ -1503,24 +1479,26 @@ const App = {
 
   async useRevive() {
     const data = state.roomData;
-    const eliminated = data?.eliminated || [];
-    if (!eliminated.length) { toast('Nessuno da salvare'); return; }
+    // Solo i giocatori eliminati la notte scorsa
+    const candidates = data?.lastNightEliminated || [];
+    if (!candidates.length) { toast('Nessuno da salvare questa mattina'); return; }
     showModal({
-      title: '✝️ Chi vuoi salvare?',
-      desc: 'Scegli un eliminato da riportare in vita. Se è un bullo, verrà rivelato e convertito.',
-      actions: eliminated.map(e => ({
+      title: '✝️ Chi vuoi resuscitare?',
+      desc: 'Puoi salvare un giocatore eliminato la notte scorsa. Se era un bullo, diventa Bullo Pentito.',
+      actions: candidates.map(e => ({
         label: e.name, style: 'btn-green',
         fn: async () => {
           closeModal();
           state.abilityUsed = true;
           const playerRole = ROLES[e.role];
           const isBullo = playerRole?.team === 'bulli' || e.role === 'omertoso';
-          // Remove from eliminated list
+          const eliminated = data?.eliminated || [];
           const newEliminated = eliminated.filter(x => x.name !== e.name);
           await state.roomRef.child('players/' + e.name + '/alive').set(true);
           await state.roomRef.child('religione_used').set(true);
           await state.roomRef.child('eliminated').set(newEliminated);
-          if (isBullo) await state.roomRef.child('players/' + e.name + '/role').set('buono_convertito');
+          await state.roomRef.child('lastNightEliminated').set([]);
+          if (isBullo) await state.roomRef.child('players/' + e.name + '/role').set('bullo_pentito');
           // Reset votes targeting the revived player
           const currentVotes = data.votes || {};
           const cleanedVotes = {};
@@ -1529,7 +1507,7 @@ const App = {
           });
           await state.roomRef.child('votes').set(cleanedVotes);
           const txt = isBullo
-            ? `✝️ ${e.name} è stato/a salvato/a! Era un bullo — ora gioca con i buoni!`
+            ? `✝️ ${e.name} è stato/a resuscitato/a! Era un bullo — ora gioca con i buoni come Bullo Pentito!`
             : `✝️ ${e.name} è tornato/a in vita!`;
           await state.roomRef.child('events/' + Date.now()).set({ text: txt, type: isBullo ? 'info' : 'good' });
           toast(txt);
@@ -1627,41 +1605,8 @@ const App = {
     await state.roomRef.child('votes/' + fifone.name).set(leader);
   },
 
-  _showLeccapiedeModal(data) {
-    // Solo una volta per partita
-    if (state.leccapiedinChoiceMade) return;
-    const bullo = Object.values(data.players || {}).find(p => p.role === 'bullo' && p.alive);
-    const bulloName = bullo ? bullo.name : 'il bullo rimasto';
-    setTimeout(() => {
-      showModal({
-        title: '🐍 Un bullo ha bisogno di te!',
-        desc: 'Rimane un solo bullo in vita. Vuoi unirti a lui? Se accetti, vincete insieme — ma lui non saprà chi sei.',
-        actions: [
-          {
-            label: '🤝 Sì, mi unisco',
-            style: 'btn-danger',
-            fn: async () => {
-              closeModal();
-              state.leccapiedinChoiceMade = true;
-              state.leccapedeSwitch = true;
-              await state.roomRef.child('players/' + state.myName + '/switchedTeam').set(true);
-              await state.roomRef.child('leccapieliNotify').set(null);
-              toast('Hai scelto di unirti ai bulli. Buona fortuna!');
-            }
-          },
-          {
-            label: '❌ No, resto con i buoni',
-            style: 'btn-outline',
-            fn: async () => {
-              closeModal();
-              state.leccapiedinChoiceMade = true;
-              await state.roomRef.child('leccapieliNotify').set(null);
-              toast('Hai scelto di restare con i buoni.');
-            }
-          }
-        ]
-      });
-    }, 600);
+  _showLeccapiedeModal(_data) {
+    // Meccanica rimossa: il Leccapiedi vince passivamente con i bulli
   },
 
   _showPrivateNightResponse(data) {

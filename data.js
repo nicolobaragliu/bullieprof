@@ -89,7 +89,7 @@ const ROLES = {
     name: 'Prof di Religione',
     team: 'buoni',
     icon: '✝️',
-    desc: 'Una volta per partita salvi un giocatore già eliminato. Non puoi salvare te stesso. Se salvi un bullo, l\'app rivela la sua identità e da quel momento gioca con i buoni.',
+    desc: 'Una volta per partita, nella fase mattino subito dopo l\'annuncio del Preside, puoi resuscitare uno dei giocatori eliminati la notte appena trascorsa. Se era un bullo, diventa Bullo Pentito. Vinci con i buoni.',
     nightAction: false,
     dayAction: true,
     isAmbiguous: false,
@@ -221,14 +221,14 @@ const ROLES = {
   leccapiedi: {
     id: 'leccapiedi',
     name: 'Il Leccapiedi',
-    team: 'buoni', // starts with buoni, can switch
+    team: 'buoni',
     icon: '🐍',
-    desc: 'Giochi con i buoni. Quando rimane un solo bullo ricevi una notifica: puoi unirti a lui. Se accetti, vincete insieme. Il bullo saprà di avere un alleato anonimo.',
+    desc: 'Giochi con i buoni ma vinci anche tu se i bulli vincono. I bulli non sanno chi sei.',
     nightAction: false,
     dayAction: false,
     isAmbiguous: true,
     minPlayers: 10,
-    abilities: ['switch_team'],
+    abilities: [],
   },
 
   bullo_pentito: {
@@ -314,7 +314,7 @@ const ROLES = {
   },
   nota: {
     id: 'nota',
-    name: 'Quello della Nota',
+    name: 'Collezionista di Note',
     team: 'buoni',
     icon: '✋',
     desc: 'Nessun potere speciale. Vinci con i buoni.',
